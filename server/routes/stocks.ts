@@ -15,16 +15,29 @@ function toISO(d: Date | string | number): string {
 }
 
 async function fetchHistorical(symbol: string, range: string, interval: string): Promise<HistoricalPoint[]> {
-  const chart = await yahooFinance.chart(symbol, { range, interval: interval as any });
-  const quotes = chart.quotes ?? [];
-  return quotes.map((q) => ({
-    date: toISO(q.date as any),
-    open: q.open ?? q.close ?? 0,
-    high: q.high ?? q.close ?? 0,
-    low: q.low ?? q.close ?? 0,
-    close: q.close ?? 0,
-    volume: q.volume ?? 0,
+  const params = new URLSearchParams({ range, interval, includeAdjustedClose: "true" });
+  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?${params.toString()}`;
+  const resp = await fetch(url, { headers: { "User-Agent": "fusion-starter" } });
+  if (!resp.ok) throw new Error(`Yahoo Finance error: ${resp.status}`);
+  const json = await resp.json();
+  const result = json?.chart?.result?.[0];
+  const timestamps: number[] = result?.timestamp || [];
+  const quote = result?.indicators?.quote?.[0] || {};
+  const close: number[] = quote.close || [];
+  const open: number[] = quote.open || [];
+  const high: number[] = quote.high || [];
+  const low: number[] = quote.low || [];
+  const volume: number[] = quote.volume || [];
+
+  const out: HistoricalPoint[] = timestamps.map((ts: number, i: number) => ({
+    date: new Date(ts * 1000).toISOString(),
+    open: Number.isFinite(open[i]) ? open[i] : Number.isFinite(close[i]) ? close[i] : 0,
+    high: Number.isFinite(high[i]) ? high[i] : Number.isFinite(close[i]) ? close[i] : 0,
+    low: Number.isFinite(low[i]) ? low[i] : Number.isFinite(close[i]) ? close[i] : 0,
+    close: Number.isFinite(close[i]) ? close[i] : 0,
+    volume: Number.isFinite(volume[i]) ? volume[i] : 0,
   }));
+  return out.filter((r) => Number.isFinite(r.close) && r.close !== 0);
 }
 
 // Simple ML models implemented in TS
