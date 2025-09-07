@@ -218,11 +218,13 @@ export const trainAndPredict: RequestHandler = async (req, res) => {
       results.lr = evalOn(preds);
     }
     if (models.includes("sarima")) {
-      const preds = sarima(closes, Math.max(2, Number(window)), 5);
+      const seasonal = Number.isFinite(Number(sarimaSeasonal)) ? Math.max(1, Number(sarimaSeasonal)) : 5;
+      const preds = sarima(closes, Math.max(2, Number(window)), seasonal);
       results.sarima = evalOn(preds);
     }
     if (models.includes("lstm")) {
-      const preds = lstmLike(closes, Math.max(3, Number(window)));
+      const look = Number.isFinite(Number(lstmLookback)) ? Math.max(1, Number(lstmLookback)) : Math.max(3, Number(window));
+      const preds = lstmLike(closes, look);
       results.lstm = evalOn(preds);
     }
 
