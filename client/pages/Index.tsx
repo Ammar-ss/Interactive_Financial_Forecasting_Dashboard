@@ -7,6 +7,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Label } from "@/components/ui/label";
+import { useEffect, useMemo, useState } from "react";
+import { useDataset } from "@/context/DatasetContext";
 import type { HistoricalResponse, TrainResponseBody } from "@shared/api";
 import {
   LineChart,
