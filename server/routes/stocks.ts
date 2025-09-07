@@ -1,5 +1,5 @@
 import { RequestHandler } from "express";
-import yahooFinance from "yahoo-finance2";
+// Using direct Yahoo Finance HTTP API to avoid SDK incompatibilities
 
 export interface HistoricalPoint {
   date: string; // ISO date
