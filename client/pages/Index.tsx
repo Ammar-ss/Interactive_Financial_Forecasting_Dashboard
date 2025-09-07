@@ -31,7 +31,8 @@ const modelColors: Record<string, string> = {
 };
 
 export default function Index() {
-  const [symbol, setSymbol] = useState("AAPL");
+  const { dataset, company, setCompany } = useDataset();
+  const [symbol, setSymbol] = useState(company ?? "AAPL");
   const [range, setRange] = useState<(typeof ranges)[number]>("1y");
   const [interval, setInterval] = useState<(typeof intervals)[number]>("1d");
   const [useMA, setUseMA] = useState(true);
