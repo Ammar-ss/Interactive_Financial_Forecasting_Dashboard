@@ -80,18 +80,42 @@ export default function Index() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [company]);
 
+  // Resilient fetch helper: try relative path first (works through preview proxy), then fallback to origin
+  async function apiFetch(path: string, opts?: RequestInit) {
+    // try relative
+    try {
+      const r = await fetch(path, opts ?? undefined);
+      if (!r.ok) {
+        const body = await r.text().catch(() => "");
+        throw new Error(`${r.status} ${r.statusText} ${body}`.trim());
+      }
+      return r.json();
+    } catch (err) {
+      // network error or blocked; try explicit origin
+      try {
+        const origin = window.location.origin;
+        const r2 = await fetch(`${origin}${path}`, opts ?? undefined);
+        if (!r2.ok) {
+          const body = await r2.text().catch(() => "");
+          throw new Error(`${r2.status} ${r2.statusText} ${body}`.trim());
+        }
+        return r2.json();
+      } catch (err2: any) {
+        // throw original network error if available
+        throw err2 || err;
+      }
+    }
+  }
+
   const runAll = async () => {
     setLoading(true);
     setError(null);
+    setErrorDetail(null);
     try {
       const qs = new URLSearchParams({ symbol, range, interval, dataset });
-      const origin = window.location.origin;
       const [h, t] = await Promise.all([
-        fetch(`${origin}/api/stocks/historical?${qs.toString()}`).then(async (r) => {
-          if (!r.ok) throw new Error(`Historical fetch failed: ${r.status} ${await r.text()}`);
-          return r.json();
-        }),
-        fetch(`${origin}/api/stocks/train`, {
+        apiFetch(`/api/stocks/historical?${qs.toString()}`),
+        apiFetch(`/api/stocks/train`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -104,13 +128,10 @@ export default function Index() {
             sarimaSeasonal,
             lstmLookback,
           }),
-        }).then(async (r) => {
-          if (!r.ok) throw new Error(`Train failed: ${r.status} ${await r.text()}`);
-          return r.json();
         }),
       ]);
-      if (h.error) throw new Error(h.error);
-      if (t.error) throw new Error(t.error);
+      if ((h as any).error) throw new Error((h as any).error);
+      if ((t as any).error) throw new Error((t as any).error);
       setHist(h as HistoricalResponse);
       setTrain(t as TrainResponseBody);
     } catch (e: any) {
