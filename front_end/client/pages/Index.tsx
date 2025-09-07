@@ -48,6 +48,8 @@ export default function Index() {
   const [useLR, setUseLR] = useState(true);
   const [useSARIMA, setUseSARIMA] = useState(false);
   const [useLSTM, setUseLSTM] = useState(false);
+  const [sarimaSeasonal, setSarimaSeasonal] = useState(5);
+  const [lstmLookback, setLstmLookback] = useState(3);
   const [windowSize, setWindowSize] = useState(10);
 
   const [loading, setLoading] = useState(false);
