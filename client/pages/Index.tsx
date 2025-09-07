@@ -158,6 +158,37 @@ export default function Index() {
                     <Label htmlFor="window">Window</Label>
                     <Input id="window" type="number" min={2} max={60} value={windowSize} onChange={(e) => setWindowSize(parseInt(e.target.value || "1", 10))} />
                   </div>
+
+                  <div className="flex items-center gap-2">
+                    <Input id="uploadKey" value={uploadKey} onChange={(e) => setUploadKey(e.target.value)} placeholder="dataset_key" />
+                    <input id="csvfile" type="file" accept=",text/csv" onChange={async (e) => {
+                      const f = (e.target as HTMLInputElement).files?.[0];
+                      if (!f) return;
+                      setUploadFileName(f.name);
+                      const txt = await f.text();
+                      (window as any).__latestCSV = txt;
+                    }} className="hidden" />
+                    <label htmlFor="csvfile" className="inline-flex items-center cursor-pointer px-3 py-2 rounded-md border border-input bg-background text-sm">Choose CSV</label>
+                    <Button onClick={async () => {
+                      const txt = (window as any).__latestCSV;
+                      if (!txt) { setError("No CSV selected"); return; }
+                      setUploading(true);
+                      try {
+                        const res = await fetch('/api/datasets/upload', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: uploadKey || dataset, csv: txt }) });
+                        const j = await res.json();
+                        if (!res.ok) throw new Error(j?.error || 'Upload failed');
+                        setError(null);
+                        // refresh uploaded list
+                        const list = await (await fetch('/api/datasets')).json();
+                        setUploadedKeys(list.keys || []);
+                      } catch (err: any) {
+                        setError(err?.message || 'Upload failed');
+                      } finally { setUploading(false); }
+                    }} disabled={uploading} className="h-10 px-4">
+                      {uploading ? 'Uploading...' : 'Upload CSV'}
+                    </Button>
+                  </div>
+
                   <Button onClick={runAll} disabled={loading} className="h-10 px-6">
                     {loading ? "Running..." : "Run"}
                   </Button>
