@@ -287,7 +287,6 @@ export default {
   exponentialMA,
   linearRegressionPredict,
   sarima,
-  lstmLike,
   rsi,
   computeFeatures,
   lstmWithFeatures,
