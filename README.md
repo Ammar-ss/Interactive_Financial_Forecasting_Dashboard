@@ -42,7 +42,6 @@ I created an `archive_original/` directory and moved the original top-level copi
 
 - client/
 - server/
-- ai_ml/ (original ML utilities)
 - shared/
 - netlify/
 - public/
