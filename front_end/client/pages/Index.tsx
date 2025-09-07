@@ -10,6 +10,7 @@ import { useEffect, useMemo, useState } from "react";
 
 import { useDataset } from "@/context/DatasetContext";
 import type { HistoricalResponse, TrainResponseBody } from "@shared/api";
+import { apiFetch } from "@/lib/api";
 import {
   LineChart,
   Line,
