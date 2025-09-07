@@ -84,9 +84,13 @@ export default function Index() {
     setError(null);
     try {
       const qs = new URLSearchParams({ symbol, range, interval, dataset });
+      const origin = window.location.origin;
       const [h, t] = await Promise.all([
-        fetch(`/api/stocks/historical?${qs.toString()}`).then((r) => r.json()),
-        fetch(`/api/stocks/train`, {
+        fetch(`${origin}/api/stocks/historical?${qs.toString()}`).then(async (r) => {
+          if (!r.ok) throw new Error(`Historical fetch failed: ${r.status} ${await r.text()}`);
+          return r.json();
+        }),
+        fetch(`${origin}/api/stocks/train`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -99,7 +103,10 @@ export default function Index() {
             sarimaSeasonal,
             lstmLookback,
           }),
-        }).then((r) => r.json()),
+        }).then(async (r) => {
+          if (!r.ok) throw new Error(`Train failed: ${r.status} ${await r.text()}`);
+          return r.json();
+        }),
       ]);
       if (h.error) throw new Error(h.error);
       if (t.error) throw new Error(t.error);
