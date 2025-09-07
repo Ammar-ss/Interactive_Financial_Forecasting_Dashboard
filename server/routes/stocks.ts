@@ -240,7 +240,17 @@ export const trainAndPredict: RequestHandler = async (req, res) => {
     if (results.ema) nextPreds.ema = results.ema.preds[closes.length - 1];
     if (results.lr) nextPreds.lr = results.lr.preds[closes.length - 1];
     if (results.sarima) nextPreds.sarima = results.sarima.preds[closes.length - 1];
-    if (results.lstm) nextPreds.lstm = results.lstm.preds[closes.length - 1];
+    if (results.lstm) {
+      const lstmPreds = results.lstm.preds || [];
+      let val = lstmPreds[closes.length - 1];
+      if (!Number.isFinite(val)) {
+        // fallback: use last finite prediction if available, otherwise last actual close
+        const finite = lstmPreds.slice(0, closes.length).filter((x: any) => Number.isFinite(x));
+        if (finite.length) val = finite[finite.length - 1];
+        else val = closes[closes.length - 1];
+      }
+      nextPreds.lstm = val;
+    }
 
     // Build response predictions timeline aligned with data
     const predictions: Record<string, { date: string; actual: number | null; predicted: number | null }[]> = {};
