@@ -36,8 +36,7 @@ function httpsGetJson(url: string): Promise<any> {
   });
 }
 
-// In-memory store for uploaded CSV datasets
-const uploadedDatasets: Map<string, HistoricalPoint[]> = new Map();
+
 
 async function fetchHistorical(symbol: string, range: string, interval: string, dataset: string = "yahoo"): Promise<HistoricalPoint[]> {
   // Support a few datasets. For external APIs that require keys or file uploads (Kaggle, Alpha Vantage, FRED)
@@ -94,8 +93,7 @@ async function fetchHistorical(symbol: string, range: string, interval: string, 
   throw new Error(`${dataset} dataset not configured on server. For remote datasets (Kaggle, FRED, Alpha Vantage) please provide API credentials or upload CSVs.`);
 }
 
-// In-memory store for uploaded CSV datasets
-const uploadedDatasets: Map<string, HistoricalPoint[]> = new Map();
+
 
 function parseCsv(text: string): HistoricalPoint[] {
   const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
