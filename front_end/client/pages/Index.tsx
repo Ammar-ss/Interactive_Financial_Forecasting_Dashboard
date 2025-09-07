@@ -121,6 +121,8 @@ export default function Index() {
     setErrorDetail(null);
     try {
       const qs = new URLSearchParams({ symbol, range, interval, dataset });
+      const modelsArray = [useMA && "ma", useEMA && "ema", useLR && "lr", useSARIMA && "sarima", useLSTM && "lstm"].filter(Boolean) as string[];
+      setLastModels(modelsArray);
       const [h, t] = await Promise.all([
         apiFetch(`/api/stocks/historical?${qs.toString()}`),
         apiFetch(`/api/stocks/train`, {
@@ -131,7 +133,7 @@ export default function Index() {
             range,
             interval,
             dataset,
-            models: [useMA && "ma", useEMA && "ema", useLR && "lr", useSARIMA && "sarima", useLSTM && "lstm"].filter(Boolean),
+            models: modelsArray,
             window: windowSize,
             sarimaSeasonal,
             lstmLookback,
