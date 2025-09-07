@@ -46,6 +46,8 @@ export default function Index() {
   const [useMA, setUseMA] = useState(true);
   const [useEMA, setUseEMA] = useState(true);
   const [useLR, setUseLR] = useState(true);
+  const [useSARIMA, setUseSARIMA] = useState(false);
+  const [useLSTM, setUseLSTM] = useState(false);
   const [windowSize, setWindowSize] = useState(10);
 
   const [loading, setLoading] = useState(false);
