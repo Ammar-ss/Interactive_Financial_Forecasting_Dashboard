@@ -128,7 +128,7 @@ export default function Index() {
           <CardHeader>
             <CardTitle className="text-2xl">Predict future prices with built-in ML models</CardTitle>
             <CardDescription>
-              Fetch market data, train models, evaluate accuracy, and visualize forecasts — all in your browser.
+              Fetch market data, train models, evaluate accuracy, and visualize forecasts — all done here and developed by Ammar.
             </CardDescription>
           </CardHeader>
           <CardContent>
