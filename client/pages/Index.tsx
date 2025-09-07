@@ -46,17 +46,20 @@ export default function Index() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // reflect context company into local symbol
+    setSymbol(company);
     // initial load
     runAll();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [company]);
 
   const runAll = async () => {
     setLoading(true);
     setError(null);
     try {
+      const qs = new URLSearchParams({ symbol, range, interval, dataset });
       const [h, t] = await Promise.all([
-        fetch(`/api/stocks/historical?symbol=${encodeURIComponent(symbol)}&range=${range}&interval=${interval}`).then((r) => r.json()),
+        fetch(`/api/stocks/historical?${qs.toString()}`).then((r) => r.json()),
         fetch(`/api/stocks/train`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
@@ -64,6 +67,7 @@ export default function Index() {
             symbol,
             range,
             interval,
+            dataset,
             models: [useMA && "ma", useEMA && "ema", useLR && "lr"].filter(Boolean),
             window: windowSize,
           }),
