@@ -199,9 +199,9 @@ export const getHistorical: RequestHandler = async (req, res) => {
 
 export const trainAndPredict: RequestHandler = async (req, res) => {
   try {
-    const { symbol = "AAPL", range = "1y", interval = "1d", models = ["ma", "lr", "ema"], window = 5 } = req.body ?? {};
+    const { symbol = "AAPL", range = "1y", interval = "1d", models = ["ma", "lr", "ema"], window = 5, dataset = "yahoo" } = req.body ?? {};
 
-    const data = await fetchHistorical(String(symbol).toUpperCase(), String(range), String(interval));
+    const data = await fetchHistorical(String(symbol).toUpperCase(), String(range), String(interval), String(dataset));
     if (!data.length) return res.status(400).json({ error: "No data returned for symbol" });
 
     // Close prices ordered by time ascending
