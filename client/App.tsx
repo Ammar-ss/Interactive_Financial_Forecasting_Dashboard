@@ -18,9 +18,9 @@ function Layout() {
       <div className="absolute inset-0 -z-10 bg-[radial-gradient(1200px_500px_at_50%_-10%,hsl(var(--primary)/0.15),transparent)]" />
       <header className="sticky top-0 z-20 backdrop-blur supports-[backdrop-filter]:bg-background/70 border-b">
         <div className="container flex h-16 items-center justify-between">
-          <div className="flex items-center gap-2">
-            <div className="size-8 rounded-md bg-primary/90 shadow-sm shadow-primary/40" />
-            <span className="font-extrabold tracking-tight text-xl">AstraStocks</span>
+          <div className="flex items-center gap-3">
+            <img src="https://cdn.builder.io/api/v1/image/assets%2F54f8588728e94fb0b8646e3f37922df0%2Fcd48fb1260514aca9d84f9c0d2f57891?format=webp&width=800" alt="Ammar_Predicts logo" className="h-8 w-8 rounded-md object-cover" />
+            <span className="font-extrabold tracking-tight text-xl">Ammar_Predicts</span>
             <Badge variant="secondary" className="ml-2">ML</Badge>
           </div>
           <div className="hidden md:flex items-center gap-3 text-sm text-muted-foreground">
