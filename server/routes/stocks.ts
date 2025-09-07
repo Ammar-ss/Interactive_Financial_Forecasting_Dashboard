@@ -184,13 +184,14 @@ function mape(yTrue: number[], yPred: number[]): number {
 
 export const getHistorical: RequestHandler = async (req, res) => {
   try {
-    const symbol = (req.query.symbol as string)?.toUpperCase() ?? "AAPL";
+      const symbol = (req.query.symbol as string)?.toUpperCase() ?? "AAPL";
     const range = (req.query.range as string) ?? "1y";
     const interval = (req.query.interval as string) ?? "1d";
+    const dataset = (req.query.dataset as string) ?? "yahoo";
 
-    const data = await fetchHistorical(symbol, range, interval);
+    const data = await fetchHistorical(symbol, range, interval, dataset);
 
-    res.json({ symbol, range, interval, data });
+    res.json({ symbol, range, interval, dataset, data });
   } catch (err: any) {
     res.status(500).json({ error: err?.message ?? "Failed to fetch data" });
   }
