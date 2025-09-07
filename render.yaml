@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: ammar-predicts
+    env: node
+    plan: free
+    branch: main
+    autoDeploy: true
+    buildCommand: corepack enable && pnpm install && pnpm build
+    startCommand: pnpm start
+    healthCheckPath: /api/ping
+    envVars: []
