@@ -57,6 +57,7 @@ export default function Index() {
   const [hist, setHist] = useState<HistoricalResponse | null>(null);
   const [train, setTrain] = useState<TrainResponseBody | null>(null);
   const [error, setError] = useState<string | null>(null);
+  const [errorDetail, setErrorDetail] = useState<any>(null);
 
   useEffect(() => {
     // reflect context company into local symbol
@@ -114,6 +115,7 @@ export default function Index() {
       setTrain(t as TrainResponseBody);
     } catch (e: any) {
       setError(e?.message ?? "Something went wrong");
+      setErrorDetail(e);
     } finally {
       setLoading(false);
     }
@@ -240,6 +242,7 @@ export default function Index() {
                         await runAll();
                       } catch (err: any) {
                         setError(err?.message || 'Upload failed');
+                        setErrorDetail(err);
                       } finally { setUploading(false); }
                     }} disabled={uploading} className="h-10 px-4">
                       {uploading ? 'Uploading...' : 'Upload CSV'}
@@ -302,7 +305,24 @@ export default function Index() {
                 </div>
 
                 {error ? (
-                  <div className="text-destructive">{error}</div>
+                  <div className="p-3 rounded-md bg-red-50 border border-red-200 text-red-900 mb-3">
+                    <div className="flex items-start justify-between">
+                      <div className="flex-1">
+                        <div className="font-medium">Error</div>
+                        <div className="mt-1 text-sm whitespace-pre-wrap">{error}</div>
+                        {errorDetail ? (
+                          <details className="mt-2 text-xs text-muted-foreground">
+                            <summary className="cursor-pointer">Show details</summary>
+                            <pre className="mt-2 max-h-48 overflow-auto text-xs bg-red-10 p-2 rounded">{typeof errorDetail === 'string' ? errorDetail : JSON.stringify(errorDetail, null, 2)}</pre>
+                          </details>
+                        ) : null}
+                      </div>
+                      <div className="ml-4 flex-shrink-0 flex flex-col gap-2">
+                        <Button variant="ghost" onClick={() => { navigator.clipboard?.writeText(typeof errorDetail === 'string' ? errorDetail : JSON.stringify(errorDetail || error)); }}>Copy</Button>
+                        <Button variant="ghost" onClick={() => { setError(null); setErrorDetail(null); }}>Dismiss</Button>
+                      </div>
+                    </div>
+                  </div>
                 ) : null}
 
                 {uploadedKeys.length ? (
