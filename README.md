@@ -1,6 +1,6 @@
 # Ammar_Predicts — Project Layout
 
-I reorganized the repository into six top-level folders and consolidated ML utilities into a single canonical folder. The repo is arranged so the app continues to run while keeping a clearer structure.
+This repository was reorganized to keep a clear, canonical layout for frontend, backend, ML utilities and auxiliary files. The README documents the current structure and recent cleanup actions.
 
 Top-level folders:
 
@@ -24,40 +24,35 @@ Top-level folders:
   - README.md — placeholder and recommendations for persistent DB integration (Neon / Supabase / Prisma).
 
 - server_management/
-  - netlify.toml — Netlify configuration (copied)
-  - vite.config.server.ts — server build config (copied)
-  - netlify_functions_api.ts — wrapper for the Netlify function handler
+  - Helpers and server-build configuration (e.g. vite.config.server.ts). Remove or update provider-specific config as needed.
 
 - extra_files/
-  - AGENTS.md, components.json, shared_api.ts — copies and helpers.
+  - AGENTS.md, components.json, shared_api.ts — miscellaneous copies and helpers.
 
 Configuration notes:
 
 - tsconfig.json: Path alias updated so `@/*` resolves to `./front_end/client/*`.
 - vite.config.ts and vite.config.server.ts: Alias `@` updated to `./front_end/client` so Vite resolves imports to the new frontend copy.
-- server/routes/stocks.ts now imports ML helpers from `../../AI_ML/models/ml`.
+- server/routes/stocks.ts imports ML helpers from `../../AI_ML/models/ml`.
 
-ai_ml consolidation and removal
+Netlify removal (recent cleanup)
 
-- The original `ai_ml/models/ml.ts` implementation was consolidated into `AI_ML/models/ml.ts` and the server import paths were updated accordingly.
-- The original `ai_ml/models/ml.ts` file was removed from the repository to avoid duplication. If you still have an `ai_ml/` directory (empty or otherwise) and want it removed, run the provided script locally or delete it manually.
+- The `netlify/` directory (serverless functions and related files) was removed locally as part of a cleanup you performed.
+- If you want the repository to reflect this removal, consider deleting or updating the following files in the repo if still present:
+  - `netlify.toml` (root)
+  - `server_management/netlify.toml`
+  - any `netlify/` directory entries
 
-Safe deletion script
+Why keep copies / archive
 
-A safe, interactive deletion script was added at `scripts/delete_ai_ml.sh`. Run locally to review and remove the old `ai_ml` folder:
+- An `archive_original/` directory (if present) contains original top-level copies kept for recovery. Only permanently remove it after confirming the app builds and runs.
 
-bash scripts/delete_ai_ml.sh --confirm
+Recommended next steps (local actions):
 
-(You will be prompted to type `DELETE` to perform an irreversible deletion.)
+1. Run a full build and test locally to ensure everything still works:
+   - pnpm install
+   - pnpm build
+2. If the app works and you want to permanently remove Netlify config from the repo, delete `netlify.toml` and `server_management/netlify.toml` and commit the change.
+3. Add CI checks (optional) to ensure refactors don't break builds.
 
-Archive of original files
-
-I created an `archive_original/` directory in earlier steps (if present) that contains original top-level copies kept for recovery. If you prefer a permanent cleanup (removing `archive_original` or removing other originals), tell me and I'll prepare a safe deletion plan.
-
-Next steps you might want:
-
-- Permanently remove `archive_original/` after verifying everything works.
-- Run a full project build (`pnpm build` / `npm run build`) locally to confirm configuration changes.
-- Add CI checks to ensure the project builds after refactors.
-
-If you'd like any wording adjusted or more technical details added to this README, tell me what to include and I'll update it.
+If you want, I can remove netlify-related config files from the repository and update imports/README. Confirm and I'll make the edits here (note: deletions executed by me are subject to the environment's ACLs; if any destructive action is blocked I will provide a safe script you can run locally).
