@@ -100,7 +100,8 @@ async function fetchHistorical(symbol: string, range: string, interval: string, 
 function parseCsv(text: string): HistoricalPoint[] {
   const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
   if (!lines.length) return [];
-  const header = lines[0].split(/,|;|\t/).map((h) => h.trim().toLowerCase());
+  const headerParts = lines[0].split(/,|;|\t/).map((h) => h.trim());
+  const header = headerParts.map((h) => h.toLowerCase());
   const rows = lines.slice(1);
   const dateIdx = header.findIndex((h) => /date|timestamp|day/.test(h));
   const closeIdx = header.findIndex((h) => /close|adjclose|adj_close/.test(h));
@@ -108,19 +109,24 @@ function parseCsv(text: string): HistoricalPoint[] {
   const highIdx = header.findIndex((h) => /high/.test(h));
   const lowIdx = header.findIndex((h) => /low/.test(h));
   const volIdx = header.findIndex((h) => /vol|volume/.test(h));
+  const symbolIdx = header.findIndex((h) => /symbol|ticker|code/.test(h));
 
-  const out: HistoricalPoint[] = rows.map((r) => {
-    const cols = r.split(/,|;|\t/).map((c) => c.trim());
-    const dateRaw = dateIdx >= 0 ? cols[dateIdx] : null;
-    const date = dateRaw ? new Date(dateRaw).toISOString() : new Date().toISOString();
-    const parseNum = (i: number) => (i >= 0 ? Number(cols[i].replace(/[^0-9.-]/g, "")) : NaN);
-    const close = parseNum(closeIdx);
-    const open = Number.isFinite(parseNum(openIdx)) ? parseNum(openIdx) : close;
-    const high = Number.isFinite(parseNum(highIdx)) ? parseNum(highIdx) : close;
-    const low = Number.isFinite(parseNum(lowIdx)) ? parseNum(lowIdx) : close;
-    const volume = Number.isFinite(parseNum(volIdx)) ? parseNum(volIdx) : 0;
-    return { date, open: open || 0, high: high || 0, low: low || 0, close: close || 0, volume };
-  }).filter((p) => Number.isFinite(p.close) && p.close !== 0);
+  const out: HistoricalPoint[] = rows
+    .map((r) => {
+      const cols = r.split(/,|;|\t/).map((c) => c.trim());
+      const dateRaw = dateIdx >= 0 ? cols[dateIdx] : null;
+      const date = dateRaw ? new Date(dateRaw).toISOString() : new Date().toISOString();
+      const parseNum = (i: number) => (i >= 0 && cols[i] ? Number(cols[i].replace(/[^0-9.-]/g, "")) : NaN);
+      const close = parseNum(closeIdx);
+      const open = Number.isFinite(parseNum(openIdx)) ? parseNum(openIdx) : close;
+      const high = Number.isFinite(parseNum(highIdx)) ? parseNum(highIdx) : close;
+      const low = Number.isFinite(parseNum(lowIdx)) ? parseNum(lowIdx) : close;
+      const volume = Number.isFinite(parseNum(volIdx)) ? parseNum(volIdx) : 0;
+      const point: any = { date, open: open || 0, high: high || 0, low: low || 0, close: close || 0, volume };
+      if (symbolIdx >= 0 && cols[symbolIdx]) point.symbol = String(cols[symbolIdx]).toUpperCase();
+      return point as HistoricalPoint;
+    })
+    .filter((p) => Number.isFinite((p as any).close) && (p as any).close !== 0);
 
   // sort ascending by date
   out.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
