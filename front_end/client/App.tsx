@@ -40,11 +40,9 @@ function HeaderInner() {
   useEffect(() => {
     (async () => {
       try {
-        const res = await fetch('/api/datasets');
-        if (res.ok) {
-          const j = await res.json();
-          setUploaded(j.keys || []);
-        }
+        const { apiFetch } = await import('./lib/api');
+        const list = await apiFetch('/api/datasets');
+        setUploaded(list.keys || []);
       } catch (e) {
         // ignore
       }
