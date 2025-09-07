@@ -217,6 +217,14 @@ export const trainAndPredict: RequestHandler = async (req, res) => {
       const preds = linearRegressionPredict(closes, Math.max(3, Number(window)));
       results.lr = evalOn(preds);
     }
+    if (models.includes("sarima")) {
+      const preds = sarima(closes, Math.max(2, Number(window)), 5);
+      results.sarima = evalOn(preds);
+    }
+    if (models.includes("lstm")) {
+      const preds = lstmLike(closes, Math.max(3, Number(window)));
+      results.lstm = evalOn(preds);
+    }
 
     const nextPreds: Record<string, number> = {};
     if (results.ma) nextPreds.ma = results.ma.preds[closes.length - 1];
