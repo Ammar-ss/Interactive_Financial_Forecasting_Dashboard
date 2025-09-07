@@ -1,11 +1,11 @@
 # Ammar_Predicts — Project Layout
 
-I reorganized the repository into six top-level folders to match your request. Files were copied (not moved) so the app keeps working while providing the new, clearer layout.
+I reorganized the repository into six top-level folders and consolidated ML utilities into a single canonical folder. The repo is arranged so the app continues to run while keeping a clearer structure.
 
-Top-level folders (copies):
+Top-level folders:
 
 - front_end/
-  - client/  — Complete frontend React app (pages, components, styles). This is the primary frontend copy used when resolving the `@/*` alias.
+  - client/ — Frontend React app (pages, components, styles). This is the primary frontend code referenced by the `@/*` alias.
     - pages/Index.tsx — Main application page (predictor UI).
     - components/ui/ — UI components library (button, input, card, etc.).
     - context/DatasetContext.tsx — Dataset selection context.
@@ -18,7 +18,7 @@ Top-level folders (copies):
     - routes/demo.ts — demo endpoint.
 
 - AI_ML/
-  - models/ml.ts — ML utility functions (movingAverage, exponentialMA, linear regression, metrics).
+  - models/ml.ts — ML utility functions (movingAverage, exponentialMA, linear regression, metrics). This file is the canonical implementation used by the server.
 
 - database/
   - README.md — placeholder and recommendations for persistent DB integration (Neon / Supabase / Prisma).
@@ -31,35 +31,33 @@ Top-level folders (copies):
 - extra_files/
   - AGENTS.md, components.json, shared_api.ts — copies and helpers.
 
-Notes about configuration changes made so app resolves the new front_end copy:
+Configuration notes:
 
 - tsconfig.json: Path alias updated so `@/*` resolves to `./front_end/client/*`.
 - vite.config.ts and vite.config.server.ts: Alias `@` updated to `./front_end/client` so Vite resolves imports to the new frontend copy.
+- server/routes/stocks.ts now imports ML helpers from `../../AI_ML/models/ml`.
+
+ai_ml consolidation and removal
+
+- The original `ai_ml/models/ml.ts` implementation was consolidated into `AI_ML/models/ml.ts` and the server import paths were updated accordingly.
+- The original `ai_ml/models/ml.ts` file was removed from the repository to avoid duplication. If you still have an `ai_ml/` directory (empty or otherwise) and want it removed, run the provided script locally or delete it manually.
+
+Safe deletion script
+
+A safe, interactive deletion script was added at `scripts/delete_ai_ml.sh`. Run locally to review and remove the old `ai_ml` folder:
+
+bash scripts/delete_ai_ml.sh --confirm
+
+(You will be prompted to type `DELETE` to perform an irreversible deletion.)
 
 Archive of original files
 
-I created an `archive_original/` directory and moved the original top-level copies of the project into it to keep this repository clean while preserving everything for recovery. Items moved into `archive_original/` include (non-exhaustive):
+I created an `archive_original/` directory in earlier steps (if present) that contains original top-level copies kept for recovery. If you prefer a permanent cleanup (removing `archive_original` or removing other originals), tell me and I'll prepare a safe deletion plan.
 
-- client/
-- server/
-- shared/
-- netlify/
-- public/
-- dist/
-- node_modules/
-- components.json
-- AGENTS.md
+Next steps you might want:
 
-If you want any additional items included in the archive or prefer a permanent deletion of the archive, tell me and I'll perform that after explicit confirmation.
+- Permanently remove `archive_original/` after verifying everything works.
+- Run a full project build (`pnpm build` / `npm run build`) locally to confirm configuration changes.
+- Add CI checks to ensure the project builds after refactors.
 
-Why I copied instead of moving
-
-- Copying is safer: it preserves the original files and build configuration while providing a clean, separate folder layout you requested. If you prefer a full move (delete originals and update all imports), I can perform that in a follow-up.
-
-Next steps I recommend
-
-- If you want a single canonical location, I can fully move files and update imports throughout the repo (careful operation).
-- Add a persistent DB (Neon/Supabase) for uploaded datasets — I can scaffold Prisma or a Supabase client.
-- Add CI checks to ensure the project builds after moves.
-
-If you'd like me to proceed with physically moving (not copying) and updating every import to point to the new locations, confirm and I'll perform the full move and run the necessary edits.
+If you'd like any wording adjusted or more technical details added to this README, tell me what to include and I'll update it.
