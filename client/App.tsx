@@ -72,6 +72,7 @@ function HeaderInner() {
 }
 
 function Layout() {
+  const { dataset } = useDataset();
   return (
     <div className="min-h-screen bg-gradient-to-b from-background via-background to-background">
       <div className="absolute inset-0 -z-10 bg-[radial-gradient(1200px_500px_at_50%_-10%,hsl(var(--primary)/0.15),transparent)]" />
