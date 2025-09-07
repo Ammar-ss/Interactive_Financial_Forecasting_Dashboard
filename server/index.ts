@@ -24,5 +24,9 @@ export function createServer() {
   app.get("/api/stocks/historical", getHistorical);
   app.post("/api/stocks/train", trainAndPredict);
 
+  // Dataset upload / management
+  app.post("/api/datasets/upload", uploadDataset);
+  app.get("/api/datasets", listDatasets);
+
   return app;
 }
