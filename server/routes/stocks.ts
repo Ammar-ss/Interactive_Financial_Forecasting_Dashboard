@@ -90,7 +90,14 @@ async function fetchHistorical(symbol: string, range: string, interval: string, 
   // For other datasets we require API keys or file upload. Provide an informative error.
   // But first check if a dataset was uploaded and is available in-memory
   if (uploadedDatasets.has(dataset)) {
-    return uploadedDatasets.get(dataset)!;
+    const data = uploadedDatasets.get(dataset)!;
+    // If the uploaded CSV included a symbol/ticker column, allow filtering by the requested symbol
+    if (symbol && data.length && (data[0] as any).symbol !== undefined) {
+      const filtered = data.filter((r) => ((r as any).symbol || "").toUpperCase() === String(symbol).toUpperCase());
+      if (filtered.length) return filtered;
+      throw new Error(`No rows found for symbol ${symbol} in uploaded dataset ${dataset}`);
+    }
+    return data;
   }
   throw new Error(`${dataset} dataset not configured on server. For remote datasets (Kaggle, FRED, Alpha Vantage) please provide API credentials or upload CSVs.`);
 }
