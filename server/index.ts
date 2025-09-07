@@ -2,6 +2,7 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import { handleDemo } from "./routes/demo";
+import { getHistorical, trainAndPredict } from "./routes/stocks";
 
 export function createServer() {
   const app = express();
@@ -18,6 +19,10 @@ export function createServer() {
   });
 
   app.get("/api/demo", handleDemo);
+
+  // Stock ML routes
+  app.get("/api/stocks/historical", getHistorical);
+  app.post("/api/stocks/train", trainAndPredict);
 
   return app;
 }
