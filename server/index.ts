@@ -2,7 +2,7 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import { handleDemo } from "./routes/demo";
-import { getHistorical, trainAndPredict } from "./routes/stocks";
+import { getHistorical, trainAndPredict, uploadDataset, listDatasets } from "./routes/stocks";
 
 export function createServer() {
   const app = express();
