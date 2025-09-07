@@ -95,6 +95,8 @@ export default function Index() {
             dataset,
             models: [useMA && "ma", useEMA && "ema", useLR && "lr", useSARIMA && "sarima", useLSTM && "lstm"].filter(Boolean),
             window: windowSize,
+            sarimaSeasonal,
+            lstmLookback,
           }),
         }).then((r) => r.json()),
       ]);
