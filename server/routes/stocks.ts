@@ -223,8 +223,15 @@ export const trainAndPredict: RequestHandler = async (req, res) => {
       results.sarima = evalOn(preds);
     }
     if (models.includes("lstm")) {
+      // build feature matrix using OHLCV + indicators
+      const features = computeFeatures(data, Math.max(2, Number(window)));
+      const targets = data.map((d) => d.close);
       const look = Number.isFinite(Number(lstmLookback)) ? Math.max(1, Number(lstmLookback)) : Math.max(3, Number(window));
-      const preds = lstmLike(closes, look);
+      const layers = Number.isFinite(Number(req.body?.lstmLayers)) ? Math.max(1, Number(req.body.lstmLayers)) : 1;
+      const units = Number.isFinite(Number(req.body?.lstmUnits)) ? Math.max(1, Number(req.body.lstmUnits)) : 16;
+      const epochs = Number.isFinite(Number(req.body?.lstmEpochs)) ? Math.max(1, Number(req.body.lstmEpochs)) : 50;
+      const lr = Number.isFinite(Number(req.body?.lstmLR)) ? Math.max(1e-6, Number(req.body.lstmLR)) : 0.01;
+      const preds = lstmWithFeatures(features, targets, look, layers, units, epochs, lr);
       results.lstm = evalOn(preds);
     }
 
