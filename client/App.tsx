@@ -33,7 +33,7 @@ function Layout() {
       </main>
       <footer className="border-t mt-12">
         <div className="container py-6 text-sm text-muted-foreground flex items-center justify-between">
-          <span>© {new Date().getFullYear()} AstraStocks</span>
+          <span>© {new Date().getFullYear()} Ammar_Predicts</span>
           <span>Educational use only — not financial advice</span>
         </div>
       </footer>
