@@ -1,6 +1,8 @@
 import { RequestHandler } from "express";
-// Using direct Yahoo Finance HTTP API to avoid SDK incompatibilities
+import { RequestHandler } from "express";
+import https from "https";
 
+// Using direct Yahoo Finance HTTP API via native https to avoid fetch/undici issues in Node
 export interface HistoricalPoint {
   date: string; // ISO date
   open: number;
@@ -14,12 +16,30 @@ function toISO(d: Date | string | number): string {
   return new Date(d).toISOString();
 }
 
+function httpsGetJson(url: string): Promise<any> {
+  return new Promise((resolve, reject) => {
+    const req = https.get(url, { headers: { "User-Agent": "fusion-starter" } }, (res) => {
+      let data = "";
+      res.on("data", (chunk) => (data += chunk));
+      res.on("end", () => {
+        try {
+          const json = JSON.parse(data);
+          if (res.statusCode && res.statusCode >= 400) return reject(new Error(`HTTP ${res.statusCode}`));
+          resolve(json);
+        } catch (err) {
+          reject(err);
+        }
+      });
+    });
+    req.on("error", reject);
+    req.end();
+  });
+}
+
 async function fetchHistorical(symbol: string, range: string, interval: string): Promise<HistoricalPoint[]> {
   const params = new URLSearchParams({ range, interval, includeAdjustedClose: "true" });
   const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?${params.toString()}`;
-  const resp = await fetch(url, { headers: { "User-Agent": "fusion-starter" } });
-  if (!resp.ok) throw new Error(`Yahoo Finance error: ${resp.status}`);
-  const json = await resp.json();
+  const json = await httpsGetJson(url);
   const result = json?.chart?.result?.[0];
   const timestamps: number[] = result?.timestamp || [];
   const quote = result?.indicators?.quote?.[0] || {};
