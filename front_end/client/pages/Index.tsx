@@ -438,6 +438,11 @@ export default function Index() {
                           };
                         }
 
+                        // ensure models requested in last run are present
+                        (lastModels || []).forEach((lm) => {
+                          if (!combined[lm]) combined[lm] = null;
+                        });
+
                         Object.keys(preds).forEach((k) => {
                           const srv = combined[k];
                           const needs = !srv || !isFinite(Number(srv?.rmse)) || !isFinite(Number(srv?.mae)) || !isFinite(Number(srv?.mape));
