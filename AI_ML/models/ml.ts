@@ -281,3 +281,17 @@ export function mape(yTrue: number[], yPred: number[]): number {
   }
   return c ? (s / c) * 100 : NaN;
 }
+
+export default {
+  movingAverage,
+  exponentialMA,
+  linearRegressionPredict,
+  sarima,
+  lstmLike,
+  rsi,
+  computeFeatures,
+  lstmWithFeatures,
+  rmse,
+  mae,
+  mape,
+};
