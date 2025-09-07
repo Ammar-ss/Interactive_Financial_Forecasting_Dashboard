@@ -400,36 +400,74 @@ export default function Index() {
                   </TabsList>
                   <TabsContent value="metrics" className="space-y-3">
                     {train ? (
-                      Object.entries(train.metrics).map(([k, m]) => (
-                        <Card key={k}>
-                          <CardHeader className="pb-2">
-                            <div className="flex items-center justify-between">
-                              <CardTitle className="text-base font-semibold flex items-center gap-2">
-                                <span className="inline-block size-3 rounded-full" style={{ backgroundColor: (modelColors as any)[k] ?? "#999" }} />
-                                {(k as string).toUpperCase()} Metrics
-                              </CardTitle>
-                              <Badge variant="outline">Test</Badge>
-                            </div>
-                            <CardDescription>Evaluation on hold-out data</CardDescription>
-                          </CardHeader>
-                          <CardContent>
-                            <div className="grid grid-cols-3 gap-3 text-sm">
-                              <div>
-                                <div className="text-muted-foreground">RMSE</div>
-                                <div className="font-semibold">{Number(m.rmse).toFixed(2)}</div>
+                      (() => {
+                        // compute client-side metrics for any model predictions missing in train.metrics
+                        const metricsFromServer = train.metrics || {};
+                        const combined: Record<string, any> = { ...metricsFromServer };
+                        const preds = train.predictions || {};
+                        const actuals = (train.data || []).map((d) => d.close);
+
+                        function computeClientMetrics(yTrue: number[], yPred: Array<number | null>) {
+                          const n = Math.min(yTrue.length, yPred.length);
+                          let sse = 0;
+                          let sae = 0;
+                          let sc = 0;
+                          let smape = 0;
+                          for (let i = 0; i < n; i++) {
+                            const yt = yTrue[i];
+                            const yp = yPred[i] == null ? NaN : Number(yPred[i]);
+                            if (!isFinite(yp) || !isFinite(yt)) continue;
+                            const err = yt - yp;
+                            sse += err * err;
+                            sae += Math.abs(err);
+                            smape += Math.abs(err / yt);
+                            sc++;
+                          }
+                          return {
+                            rmse: sc ? Math.sqrt(sse / sc) : NaN,
+                            mae: sc ? sae / sc : NaN,
+                            mape: sc ? (smape / sc) * 100 : NaN,
+                          };
+                        }
+
+                        Object.keys(preds).forEach((k) => {
+                          if (!combined[k]) {
+                            const pArr = (preds as any)[k].map((r: any) => r?.predicted ?? null);
+                            combined[k] = computeClientMetrics(actuals, pArr);
+                          }
+                        });
+
+                        return Object.entries(combined).map(([k, m]) => (
+                          <Card key={k}>
+                            <CardHeader className="pb-2">
+                              <div className="flex items-center justify-between">
+                                <CardTitle className="text-base font-semibold flex items-center gap-2">
+                                  <span className="inline-block size-3 rounded-full" style={{ backgroundColor: (modelColors as any)[k] ?? "#999" }} />
+                                  {(k as string).toUpperCase()} Metrics
+                                </CardTitle>
+                                <Badge variant="outline">Test</Badge>
                               </div>
-                              <div>
-                                <div className="text-muted-foreground">MAE</div>
-                                <div className="font-semibold">{Number(m.mae).toFixed(2)}</div>
+                              <CardDescription>Evaluation on hold-out data</CardDescription>
+                            </CardHeader>
+                            <CardContent>
+                              <div className="grid grid-cols-3 gap-3 text-sm">
+                                <div>
+                                  <div className="text-muted-foreground">RMSE</div>
+                                  <div className="font-semibold">{Number(m.rmse).toFixed(2)}</div>
+                                </div>
+                                <div>
+                                  <div className="text-muted-foreground">MAE</div>
+                                  <div className="font-semibold">{Number(m.mae).toFixed(2)}</div>
+                                </div>
+                                <div>
+                                  <div className="text-muted-foreground">MAPE</div>
+                                  <div className="font-semibold">{Number(m.mape).toFixed(2)}%</div>
+                                </div>
                               </div>
-                              <div>
-                                <div className="text-muted-foreground">MAPE</div>
-                                <div className="font-semibold">{Number(m.mape).toFixed(2)}%</div>
-                              </div>
-                            </div>
-                          </CardContent>
-                        </Card>
-                      ))
+                            </CardContent>
+                          </Card>
+                        ));
+                      })()
                     ) : (
                       <div className="text-sm text-muted-foreground">Run the models to see metrics.</div>
                     )}
