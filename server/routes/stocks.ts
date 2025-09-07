@@ -38,6 +38,8 @@ function httpsGetJson(url: string): Promise<any> {
 
 
 
+const uploadedDatasets: Map<string, HistoricalPoint[]> = new Map();
+
 async function fetchHistorical(symbol: string, range: string, interval: string, dataset: string = "yahoo"): Promise<HistoricalPoint[]> {
   // Support a few datasets. For external APIs that require keys or file uploads (Kaggle, Alpha Vantage, FRED)
   // we return an informative error so the user can provide keys or upload CSVs. World Bank and Yahoo are public.
