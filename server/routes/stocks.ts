@@ -84,8 +84,65 @@ async function fetchHistorical(symbol: string, range: string, interval: string, 
   }
 
   // For other datasets we require API keys or file upload. Provide an informative error.
+  // But first check if a dataset was uploaded and is available in-memory
+  if (uploadedDatasets.has(dataset)) {
+    return uploadedDatasets.get(dataset)!;
+  }
   throw new Error(`${dataset} dataset not configured on server. For remote datasets (Kaggle, FRED, Alpha Vantage) please provide API credentials or upload CSVs.`);
 }
+
+// In-memory store for uploaded CSV datasets
+const uploadedDatasets: Map<string, HistoricalPoint[]> = new Map();
+
+function parseCsv(text: string): HistoricalPoint[] {
+  const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  if (!lines.length) return [];
+  const header = lines[0].split(/,|;|\t/).map((h) => h.trim().toLowerCase());
+  const rows = lines.slice(1);
+  const dateIdx = header.findIndex((h) => /date|timestamp|day/.test(h));
+  const closeIdx = header.findIndex((h) => /close|adjclose|adj_close/.test(h));
+  const openIdx = header.findIndex((h) => /open/.test(h));
+  const highIdx = header.findIndex((h) => /high/.test(h));
+  const lowIdx = header.findIndex((h) => /low/.test(h));
+  const volIdx = header.findIndex((h) => /vol|volume/.test(h));
+
+  const out: HistoricalPoint[] = rows.map((r) => {
+    const cols = r.split(/,|;|\t/).map((c) => c.trim());
+    const dateRaw = dateIdx >= 0 ? cols[dateIdx] : null;
+    const date = dateRaw ? new Date(dateRaw).toISOString() : new Date().toISOString();
+    const parseNum = (i: number) => (i >= 0 ? Number(cols[i].replace(/[^0-9.-]/g, "")) : NaN);
+    const close = parseNum(closeIdx);
+    const open = Number.isFinite(parseNum(openIdx)) ? parseNum(openIdx) : close;
+    const high = Number.isFinite(parseNum(highIdx)) ? parseNum(highIdx) : close;
+    const low = Number.isFinite(parseNum(lowIdx)) ? parseNum(lowIdx) : close;
+    const volume = Number.isFinite(parseNum(volIdx)) ? parseNum(volIdx) : 0;
+    return { date, open: open || 0, high: high || 0, low: low || 0, close: close || 0, volume };
+  }).filter((p) => Number.isFinite(p.close) && p.close !== 0);
+
+  // sort ascending by date
+  out.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  return out;
+}
+
+export const uploadDataset: RequestHandler = async (req, res) => {
+  try {
+    // Expect JSON body: { key: string, csv: string }
+    const { key, csv } = req.body ?? {};
+    if (!key || typeof key !== "string") return res.status(400).json({ error: "Missing dataset key" });
+    if (!csv || typeof csv !== "string") return res.status(400).json({ error: "Missing csv content" });
+    const data = parseCsv(csv);
+    if (!data.length) return res.status(400).json({ error: "CSV parsed but no valid rows found" });
+    uploadedDatasets.set(key, data);
+    return res.json({ ok: true, key, rows: data.length });
+  } catch (err: any) {
+    return res.status(500).json({ error: err?.message ?? "Failed to upload" });
+  }
+};
+
+export const listDatasets: RequestHandler = async (_req, res) => {
+  const keys = Array.from(uploadedDatasets.keys());
+  res.json({ keys });
+};
 
 // Simple ML models implemented in TS
 function movingAverage(values: number[], window: number): number[] {
