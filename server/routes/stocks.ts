@@ -36,28 +36,55 @@ function httpsGetJson(url: string): Promise<any> {
   });
 }
 
-async function fetchHistorical(symbol: string, range: string, interval: string): Promise<HistoricalPoint[]> {
-  const params = new URLSearchParams({ range, interval, includeAdjustedClose: "true" });
-  const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?${params.toString()}`;
-  const json = await httpsGetJson(url);
-  const result = json?.chart?.result?.[0];
-  const timestamps: number[] = result?.timestamp || [];
-  const quote = result?.indicators?.quote?.[0] || {};
-  const close: number[] = quote.close || [];
-  const open: number[] = quote.open || [];
-  const high: number[] = quote.high || [];
-  const low: number[] = quote.low || [];
-  const volume: number[] = quote.volume || [];
+async function fetchHistorical(symbol: string, range: string, interval: string, dataset: string = "yahoo"): Promise<HistoricalPoint[]> {
+  // Support a few datasets. For external APIs that require keys or file uploads (Kaggle, Alpha Vantage, FRED)
+  // we return an informative error so the user can provide keys or upload CSVs. World Bank and Yahoo are public.
+  if (dataset === "worldbank") {
+    // Use World Bank GDP (current US$) for global (WLD). Map yearly values into time series points.
+    const startYear = new Date().getFullYear() - 10;
+    const url = `https://api.worldbank.org/v2/country/WLD/indicator/NY.GDP.MKTP.CD?date=${startYear}:${new Date().getFullYear()}&format=json&per_page=1000`;
+    const json = await httpsGetJson(url);
+    if (!Array.isArray(json) || !Array.isArray(json[1])) throw new Error("World Bank API returned unexpected response");
+    const points = json[1]
+      .filter((row: any) => row.value != null)
+      .map((row: any) => ({
+        date: `${row.date}-01-01T00:00:00.000Z`,
+        open: row.value,
+        high: row.value,
+        low: row.value,
+        close: row.value,
+        volume: 0,
+      }))
+      .reverse(); // chronological
+    return points;
+  }
 
-  const out: HistoricalPoint[] = timestamps.map((ts: number, i: number) => ({
-    date: new Date(ts * 1000).toISOString(),
-    open: Number.isFinite(open[i]) ? open[i] : Number.isFinite(close[i]) ? close[i] : 0,
-    high: Number.isFinite(high[i]) ? high[i] : Number.isFinite(close[i]) ? close[i] : 0,
-    low: Number.isFinite(low[i]) ? low[i] : Number.isFinite(close[i]) ? close[i] : 0,
-    close: Number.isFinite(close[i]) ? close[i] : 0,
-    volume: Number.isFinite(volume[i]) ? volume[i] : 0,
-  }));
-  return out.filter((r) => Number.isFinite(r.close) && r.close !== 0);
+  if (dataset === "yahoo") {
+    const params = new URLSearchParams({ range, interval, includeAdjustedClose: "true" });
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?${params.toString()}`;
+    const json = await httpsGetJson(url);
+    const result = json?.chart?.result?.[0];
+    const timestamps: number[] = result?.timestamp || [];
+    const quote = result?.indicators?.quote?.[0] || {};
+    const close: number[] = quote.close || [];
+    const open: number[] = quote.open || [];
+    const high: number[] = quote.high || [];
+    const low: number[] = quote.low || [];
+    const volume: number[] = quote.volume || [];
+
+    const out: HistoricalPoint[] = timestamps.map((ts: number, i: number) => ({
+      date: new Date(ts * 1000).toISOString(),
+      open: Number.isFinite(open[i]) ? open[i] : Number.isFinite(close[i]) ? close[i] : 0,
+      high: Number.isFinite(high[i]) ? high[i] : Number.isFinite(close[i]) ? close[i] : 0,
+      low: Number.isFinite(low[i]) ? low[i] : Number.isFinite(close[i]) ? close[i] : 0,
+      close: Number.isFinite(close[i]) ? close[i] : 0,
+      volume: Number.isFinite(volume[i]) ? volume[i] : 0,
+    }));
+    return out.filter((r) => Number.isFinite(r.close) && r.close !== 0);
+  }
+
+  // For other datasets we require API keys or file upload. Provide an informative error.
+  throw new Error(`${dataset} dataset not configured on server. For remote datasets (Kaggle, FRED, Alpha Vantage) please provide API credentials or upload CSVs.`);
 }
 
 // Simple ML models implemented in TS
