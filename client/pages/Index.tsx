@@ -98,202 +98,177 @@ export default function Index() {
   }, [train]);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-background via-background to-background">
-      <div className="relative overflow-hidden">
-        <div className="absolute inset-0 -z-10 bg-[radial-gradient(1200px_500px_at_50%_-10%,hsl(var(--primary)/0.15),transparent)]" />
-        <header className="sticky top-0 z-20 backdrop-blur supports-[backdrop-filter]:bg-background/70 border-b">
-          <div className="container flex h-16 items-center justify-between">
-            <div className="flex items-center gap-2">
-              <div className="size-8 rounded-md bg-primary/90 shadow-sm shadow-primary/40" />
-              <span className="font-extrabold tracking-tight text-xl">AstraStocks</span>
-              <Badge variant="secondary" className="ml-2">ML</Badge>
-            </div>
-            <div className="hidden md:flex items-center gap-3 text-sm text-muted-foreground">
-              <span>End-to-end stock price prediction</span>
-            </div>
-          </div>
-        </header>
-
-        <main className="container py-10">
-          <section className="grid md:grid-cols-[1fr_380px] gap-6">
-            <Card className="md:col-span-2 bg-card/80">
-              <CardHeader>
-                <CardTitle className="text-2xl">Predict future prices with built-in ML models</CardTitle>
-                <CardDescription>
-                  Fetch market data, train models, evaluate accuracy, and visualize forecasts — all in your browser.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
-                  <div className="space-y-4">
-                    <div className="flex flex-wrap items-end gap-3">
-                      <div className="w-32">
-                        <Label htmlFor="symbol">Symbol</Label>
-                        <Input
-                          id="symbol"
-                          value={symbol}
-                          onChange={(e) => setSymbol(e.target.value.toUpperCase())}
-                          placeholder="AAPL"
-                        />
-                      </div>
-                      <div>
-                        <Label>Range</Label>
-                        <Select value={range} onValueChange={(v) => setRange(v as any)}>
-                          <SelectTrigger className="w-[120px]"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            {ranges.map((r) => (
-                              <SelectItem key={r} value={r}>{r}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div>
-                        <Label>Interval</Label>
-                        <Select value={interval} onValueChange={(v) => setInterval(v as any)}>
-                          <SelectTrigger className="w-[120px]"><SelectValue /></SelectTrigger>
-                          <SelectContent>
-                            {intervals.map((i) => (
-                              <SelectItem key={i} value={i}>{i}</SelectItem>
-                            ))}
-                          </SelectContent>
-                        </Select>
-                      </div>
-                      <div className="flex-1" />
-                      <div className="w-40">
-                        <Label htmlFor="window">Window</Label>
-                        <Input id="window" type="number" min={2} max={60} value={windowSize} onChange={(e) => setWindowSize(parseInt(e.target.value || "1", 10))} />
-                      </div>
-                      <Button onClick={runAll} disabled={loading} className="h-10 px-6">
-                        {loading ? "Running..." : "Run"}
-                      </Button>
-                    </div>
-
-                    <div className="flex flex-wrap items-center gap-6 pt-2">
-                      <div className="flex items-center gap-2">
-                        <Switch id="ma" checked={useMA} onCheckedChange={setUseMA} />
-                        <Label htmlFor="ma" className="flex items-center gap-2">
-                          <span className="inline-block size-3 rounded-full" style={{ backgroundColor: modelColors.ma }} />
-                          Moving Average
-                        </Label>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Switch id="ema" checked={useEMA} onCheckedChange={setUseEMA} />
-                        <Label htmlFor="ema" className="flex items-center gap-2">
-                          <span className="inline-block size-3 rounded-full" style={{ backgroundColor: modelColors.ema }} />
-                          Exponential MA
-                        </Label>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        <Switch id="lr" checked={useLR} onCheckedChange={setUseLR} />
-                        <Label htmlFor="lr" className="flex items-center gap-2">
-                          <span className="inline-block size-3 rounded-full" style={{ backgroundColor: modelColors.lr }} />
-                          Linear Regression
-                        </Label>
-                      </div>
-                    </div>
-
-                    {error ? (
-                      <div className="text-destructive">{error}</div>
-                    ) : null}
-
-                    <div className="h-[380px] w-full">
-                      <ResponsiveContainer width="100%" height="100%">
-                        <LineChart data={chartData} margin={{ left: 12, right: 24, top: 10, bottom: 10 }}>
-                          <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" opacity={0.12} />
-                          <XAxis dataKey="date" tick={{ fontSize: 12 }} minTickGap={24} />
-                          <YAxis domain={["auto", "auto"]} tick={{ fontSize: 12 }} />
-                          <ReTooltip />
-                          <Legend />
-                          {train && (
-                            <ReferenceLine x={chartData[train.splitIndex]?.date} stroke="#64748b" strokeDasharray="4 4" label={{ value: "Train/Test Split", fill: "#64748b" }} />
-                          )}
-                          <Line type="monotone" dataKey="actual" stroke={modelColors.actual} dot={false} name="Actual" strokeWidth={1.5} />
-                          {train?.predictions?.ma && <Line type="monotone" dataKey="ma" stroke={modelColors.ma} dot={false} name="MA" strokeWidth={1.6} />}
-                          {train?.predictions?.ema && <Line type="monotone" dataKey="ema" stroke={modelColors.ema} dot={false} name="EMA" strokeWidth={1.6} />}
-                          {train?.predictions?.lr && <Line type="monotone" dataKey="lr" stroke={modelColors.lr} dot={false} name="Linear Reg" strokeWidth={1.6} />}
-                        </LineChart>
-                      </ResponsiveContainer>
-                    </div>
+    <div className="container py-10">
+      <section className="grid md:grid-cols-[1fr_380px] gap-6">
+        <Card className="md:col-span-2 bg-card/80">
+          <CardHeader>
+            <CardTitle className="text-2xl">Predict future prices with built-in ML models</CardTitle>
+            <CardDescription>
+              Fetch market data, train models, evaluate accuracy, and visualize forecasts — all in your browser.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid gap-6 lg:grid-cols-[1fr_360px]">
+              <div className="space-y-4">
+                <div className="flex flex-wrap items-end gap-3">
+                  <div className="w-32">
+                    <Label htmlFor="symbol">Symbol</Label>
+                    <Input
+                      id="symbol"
+                      value={symbol}
+                      onChange={(e) => setSymbol(e.target.value.toUpperCase())}
+                      placeholder="AAPL"
+                    />
                   </div>
+                  <div>
+                    <Label>Range</Label>
+                    <Select value={range} onValueChange={(v) => setRange(v as any)}>
+                      <SelectTrigger className="w-[120px]"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {ranges.map((r) => (
+                          <SelectItem key={r} value={r}>{r}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div>
+                    <Label>Interval</Label>
+                    <Select value={interval} onValueChange={(v) => setInterval(v as any)}>
+                      <SelectTrigger className="w-[120px]"><SelectValue /></SelectTrigger>
+                      <SelectContent>
+                        {intervals.map((i) => (
+                          <SelectItem key={i} value={i}>{i}</SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="flex-1" />
+                  <div className="w-40">
+                    <Label htmlFor="window">Window</Label>
+                    <Input id="window" type="number" min={2} max={60} value={windowSize} onChange={(e) => setWindowSize(parseInt(e.target.value || "1", 10))} />
+                  </div>
+                  <Button onClick={runAll} disabled={loading} className="h-10 px-6">
+                    {loading ? "Running..." : "Run"}
+                  </Button>
+                </div>
 
-                  <div className="space-y-4">
-                    <Tabs defaultValue="metrics" className="w-full">
-                      <TabsList className="grid grid-cols-2">
-                        <TabsTrigger value="metrics">Metrics</TabsTrigger>
-                        <TabsTrigger value="next">Next Day</TabsTrigger>
-                      </TabsList>
-                      <TabsContent value="metrics" className="space-y-3">
-                        {train ? (
-                          Object.entries(train.metrics).map(([k, m]) => (
-                            <Card key={k}>
-                              <CardHeader className="pb-2">
-                                <div className="flex items-center justify-between">
-                                  <CardTitle className="text-base font-semibold flex items-center gap-2">
-                                    <span className="inline-block size-3 rounded-full" style={{ backgroundColor: (modelColors as any)[k] ?? "#999" }} />
-                                    {(k as string).toUpperCase()} Metrics
-                                  </CardTitle>
-                                  <Badge variant="outline">Test</Badge>
-                                </div>
-                                <CardDescription>Evaluation on hold-out data</CardDescription>
-                              </CardHeader>
-                              <CardContent>
-                                <div className="grid grid-cols-3 gap-3 text-sm">
-                                  <div>
-                                    <div className="text-muted-foreground">RMSE</div>
-                                    <div className="font-semibold">{Number(m.rmse).toFixed(2)}</div>
-                                  </div>
-                                  <div>
-                                    <div className="text-muted-foreground">MAE</div>
-                                    <div className="font-semibold">{Number(m.mae).toFixed(2)}</div>
-                                  </div>
-                                  <div>
-                                    <div className="text-muted-foreground">MAPE</div>
-                                    <div className="font-semibold">{Number(m.mape).toFixed(2)}%</div>
-                                  </div>
-                                </div>
-                              </CardContent>
-                            </Card>
-                          ))
-                        ) : (
-                          <div className="text-sm text-muted-foreground">Run the models to see metrics.</div>
-                        )}
-                      </TabsContent>
-                      <TabsContent value="next">
-                        <Card>
-                          <CardHeader>
-                            <CardTitle>Next-day prediction</CardTitle>
-                            <CardDescription>Values predicted from the end of the selected range</CardDescription>
+                <div className="flex flex-wrap items-center gap-6 pt-2">
+                  <div className="flex items-center gap-2">
+                    <Switch id="ma" checked={useMA} onCheckedChange={setUseMA} />
+                    <Label htmlFor="ma" className="flex items-center gap-2">
+                      <span className="inline-block size-3 rounded-full" style={{ backgroundColor: modelColors.ma }} />
+                      Moving Average
+                    </Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Switch id="ema" checked={useEMA} onCheckedChange={setUseEMA} />
+                    <Label htmlFor="ema" className="flex items-center gap-2">
+                      <span className="inline-block size-3 rounded-full" style={{ backgroundColor: modelColors.ema }} />
+                      Exponential MA
+                    </Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Switch id="lr" checked={useLR} onCheckedChange={setUseLR} />
+                    <Label htmlFor="lr" className="flex items-center gap-2">
+                      <span className="inline-block size-3 rounded-full" style={{ backgroundColor: modelColors.lr }} />
+                      Linear Regression
+                    </Label>
+                  </div>
+                </div>
+
+                {error ? (
+                  <div className="text-destructive">{error}</div>
+                ) : null}
+
+                <div className="h-[380px] w-full">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <LineChart data={chartData} margin={{ left: 12, right: 24, top: 10, bottom: 10 }}>
+                      <CartesianGrid strokeDasharray="3 3" stroke="#1f2937" opacity={0.12} />
+                      <XAxis dataKey="date" tick={{ fontSize: 12 }} minTickGap={24} />
+                      <YAxis domain={["auto", "auto"]} tick={{ fontSize: 12 }} />
+                      <ReTooltip />
+                      <Legend />
+                      {train && (
+                        <ReferenceLine x={chartData[train.splitIndex]?.date} stroke="#64748b" strokeDasharray="4 4" label={{ value: "Train/Test Split", fill: "#64748b" }} />
+                      )}
+                      <Line type="monotone" dataKey="actual" stroke={modelColors.actual} dot={false} name="Actual" strokeWidth={1.5} />
+                      {train?.predictions?.ma && <Line type="monotone" dataKey="ma" stroke={modelColors.ma} dot={false} name="MA" strokeWidth={1.6} />}
+                      {train?.predictions?.ema && <Line type="monotone" dataKey="ema" stroke={modelColors.ema} dot={false} name="EMA" strokeWidth={1.6} />}
+                      {train?.predictions?.lr && <Line type="monotone" dataKey="lr" stroke={modelColors.lr} dot={false} name="Linear Reg" strokeWidth={1.6} />}
+                    </LineChart>
+                  </ResponsiveContainer>
+                </div>
+              </div>
+
+              <div className="space-y-4">
+                <Tabs defaultValue="metrics" className="w-full">
+                  <TabsList className="grid grid-cols-2">
+                    <TabsTrigger value="metrics">Metrics</TabsTrigger>
+                    <TabsTrigger value="next">Next Day</TabsTrigger>
+                  </TabsList>
+                  <TabsContent value="metrics" className="space-y-3">
+                    {train ? (
+                      Object.entries(train.metrics).map(([k, m]) => (
+                        <Card key={k}>
+                          <CardHeader className="pb-2">
+                            <div className="flex items-center justify-between">
+                              <CardTitle className="text-base font-semibold flex items-center gap-2">
+                                <span className="inline-block size-3 rounded-full" style={{ backgroundColor: (modelColors as any)[k] ?? "#999" }} />
+                                {(k as string).toUpperCase()} Metrics
+                              </CardTitle>
+                              <Badge variant="outline">Test</Badge>
+                            </div>
+                            <CardDescription>Evaluation on hold-out data</CardDescription>
                           </CardHeader>
                           <CardContent>
-                            <div className="space-y-2">
-                              {nextPredSummary.map((p) => (
-                                <div key={p.name} className="flex items-center justify-between text-sm">
-                                  <div className="flex items-center gap-2">
-                                    <span className="inline-block size-3 rounded-full" style={{ backgroundColor: (modelColors as any)[p.name.toLowerCase()] ?? "#999" }} />
-                                    <span className="font-medium">{p.name}</span>
-                                  </div>
-                                  <span className="tabular-nums font-semibold">${""}{p.value?.toFixed(2)}</span>
-                                </div>
-                              ))}
+                            <div className="grid grid-cols-3 gap-3 text-sm">
+                              <div>
+                                <div className="text-muted-foreground">RMSE</div>
+                                <div className="font-semibold">{Number(m.rmse).toFixed(2)}</div>
+                              </div>
+                              <div>
+                                <div className="text-muted-foreground">MAE</div>
+                                <div className="font-semibold">{Number(m.mae).toFixed(2)}</div>
+                              </div>
+                              <div>
+                                <div className="text-muted-foreground">MAPE</div>
+                                <div className="font-semibold">{Number(m.mape).toFixed(2)}%</div>
+                              </div>
                             </div>
                           </CardContent>
                         </Card>
-                      </TabsContent>
-                    </Tabs>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          </section>
-        </main>
-
-        <footer className="border-t">
-          <div className="container py-6 text-sm text-muted-foreground flex items-center justify-between">
-            <span>© {new Date().getFullYear()} AstraStocks</span>
-            <span>Educational use only — not financial advice</span>
-          </div>
-        </footer>
-      </div>
+                      ))
+                    ) : (
+                      <div className="text-sm text-muted-foreground">Run the models to see metrics.</div>
+                    )}
+                  </TabsContent>
+                  <TabsContent value="next">
+                    <Card>
+                      <CardHeader>
+                        <CardTitle>Next-day prediction</CardTitle>
+                        <CardDescription>Values predicted from the end of the selected range</CardDescription>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-2">
+                          {nextPredSummary.map((p) => (
+                            <div key={p.name} className="flex items-center justify-between text-sm">
+                              <div className="flex items-center gap-2">
+                                <span className="inline-block size-3 rounded-full" style={{ backgroundColor: (modelColors as any)[p.name.toLowerCase()] ?? "#999" }} />
+                                <span className="font-medium">{p.name}</span>
+                              </div>
+                              <span className="tabular-nums font-semibold">${""}{p.value?.toFixed(2)}</span>
+                            </div>
+                          ))}
+                        </div>
+                      </CardContent>
+                    </Card>
+                  </TabsContent>
+                </Tabs>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </section>
     </div>
   );
 }
