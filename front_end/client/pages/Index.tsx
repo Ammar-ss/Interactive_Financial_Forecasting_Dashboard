@@ -54,6 +54,7 @@ export default function Index() {
   const [windowSize, setWindowSize] = useState(10);
 
   const [loading, setLoading] = useState(false);
+  const [lastModels, setLastModels] = useState<string[]>([]);
   const [hist, setHist] = useState<HistoricalResponse | null>(null);
   const [train, setTrain] = useState<TrainResponseBody | null>(null);
   const [error, setError] = useState<string | null>(null);
