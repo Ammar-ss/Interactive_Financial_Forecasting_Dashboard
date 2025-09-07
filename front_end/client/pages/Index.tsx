@@ -249,18 +249,19 @@ export default function Index() {
                       if (!txt) { setError("No CSV selected"); return; }
                       setUploading(true);
                       try {
-                                        const origin = window.location.origin;
-                        const res = await fetch(`${origin}/api/datasets/upload`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: uploadKey || dataset, csv: txt }) });
-                        const j = await res.json();
-                        if (!res.ok) throw new Error(j?.error || 'Upload failed');
-                        setError(null);
-                        setUploadFileName('');
-                        // refresh uploaded list
-                        const list = await (await fetch(`${origin}/api/datasets`)).json();
-                        setUploadedKeys(list.keys || []);
-                        // auto-select the uploaded dataset and reload
-                        setDataset(uploadKey || dataset);
-                        await runAll();
+                                        try {
+                          const j = await apiFetch(`/api/datasets/upload`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: uploadKey || dataset, csv: txt }) });
+                          setError(null);
+                          setUploadFileName('');
+                          // refresh uploaded list
+                          const list = await apiFetch(`/api/datasets`);
+                          setUploadedKeys(list.keys || []);
+                          // auto-select the uploaded dataset and reload
+                          setDataset(uploadKey || dataset);
+                          await runAll();
+                        } catch (err: any) {
+                          throw err;
+                        }
                       } catch (err: any) {
                         setError(err?.message || 'Upload failed');
                         setErrorDetail(err);
