@@ -436,42 +436,47 @@ export default function Index() {
                         }
 
                         Object.keys(preds).forEach((k) => {
-                          if (!combined[k]) {
+                          const srv = combined[k];
+                          const needs = !srv || !isFinite(Number(srv?.rmse)) || !isFinite(Number(srv?.mae)) || !isFinite(Number(srv?.mape));
+                          if (needs) {
                             const pArr = (preds as any)[k].map((r: any) => r?.predicted ?? null);
                             combined[k] = computeClientMetrics(actuals, pArr);
                           }
                         });
 
-                        return Object.entries(combined).map(([k, m]) => (
-                          <Card key={k}>
-                            <CardHeader className="pb-2">
-                              <div className="flex items-center justify-between">
-                                <CardTitle className="text-base font-semibold flex items-center gap-2">
-                                  <span className="inline-block size-3 rounded-full" style={{ backgroundColor: (modelColors as any)[k] ?? "#999" }} />
-                                  {(k as string).toUpperCase()} Metrics
-                                </CardTitle>
-                                <Badge variant="outline">Test</Badge>
-                              </div>
-                              <CardDescription>Evaluation on hold-out data</CardDescription>
-                            </CardHeader>
-                            <CardContent>
-                              <div className="grid grid-cols-3 gap-3 text-sm">
-                                <div>
-                                  <div className="text-muted-foreground">RMSE</div>
-                                  <div className="font-semibold">{Number(m.rmse).toFixed(2)}</div>
+                        return Object.entries(combined).map(([k, m]) => {
+                          const safe = (v: any) => (isFinite(Number(v)) ? Number(v).toFixed(2) : "—");
+                          return (
+                            <Card key={k}>
+                              <CardHeader className="pb-2">
+                                <div className="flex items-center justify-between">
+                                  <CardTitle className="text-base font-semibold flex items-center gap-2">
+                                    <span className="inline-block size-3 rounded-full" style={{ backgroundColor: (modelColors as any)[k] ?? "#999" }} />
+                                    {(k as string).toUpperCase()} Metrics
+                                  </CardTitle>
+                                  <Badge variant="outline">Test</Badge>
                                 </div>
-                                <div>
-                                  <div className="text-muted-foreground">MAE</div>
-                                  <div className="font-semibold">{Number(m.mae).toFixed(2)}</div>
+                                <CardDescription>Evaluation on hold-out data</CardDescription>
+                              </CardHeader>
+                              <CardContent>
+                                <div className="grid grid-cols-3 gap-3 text-sm">
+                                  <div>
+                                    <div className="text-muted-foreground">RMSE</div>
+                                    <div className="font-semibold">{safe(m.rmse)}</div>
+                                  </div>
+                                  <div>
+                                    <div className="text-muted-foreground">MAE</div>
+                                    <div className="font-semibold">{safe(m.mae)}</div>
+                                  </div>
+                                  <div>
+                                    <div className="text-muted-foreground">MAPE</div>
+                                    <div className="font-semibold">{safe(m.mape)}{isFinite(Number(m.mape))?"%":""}</div>
+                                  </div>
                                 </div>
-                                <div>
-                                  <div className="text-muted-foreground">MAPE</div>
-                                  <div className="font-semibold">{Number(m.mape).toFixed(2)}%</div>
-                                </div>
-                              </div>
-                            </CardContent>
-                          </Card>
-                        ));
+                              </CardContent>
+                            </Card>
+                          );
+                        });
                       })()
                     ) : (
                       <div className="text-sm text-muted-foreground">Run the models to see metrics.</div>
