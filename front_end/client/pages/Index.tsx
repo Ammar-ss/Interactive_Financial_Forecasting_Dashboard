@@ -113,8 +113,8 @@ export default function Index() {
 
   const chartData = useMemo(() => {
     if (!train) return [] as any[];
-    const keys = Object.keys(train.predictions);
-    return (train.data || []).map((d, idx) => {
+    const keys = Object.keys(train.predictions || {});
+    const rows = (train.data || []).map((d, idx) => {
       const row: any = { date: new Date(d.date).toISOString().slice(0, 10), actual: d.close };
       keys.forEach((k) => {
         const p = train.predictions as any;
@@ -122,7 +122,31 @@ export default function Index() {
       });
       return row;
     });
-  }, [train]);
+
+    // append next-day prediction point if available
+    try {
+      const last = (train.data || [])[train.data.length - 1];
+      if (last && train.nextDayPrediction) {
+        const lastDate = new Date(last.date);
+        let stepDays = 1;
+        if (interval === "1wk") stepDays = 7;
+        else if (interval === "1mo") stepDays = 30;
+        const nextDate = new Date(lastDate);
+        nextDate.setDate(nextDate.getDate() + stepDays);
+        const nextDateStr = nextDate.toISOString().slice(0, 10);
+        const nextRow: any = { date: nextDateStr, actual: null };
+        Object.keys(train.nextDayPrediction).forEach((k) => {
+          const v = (train.nextDayPrediction as any)[k];
+          nextRow[k] = typeof v === "number" ? v : null;
+        });
+        rows.push(nextRow);
+      }
+    } catch (e) {
+      // ignore
+    }
+
+    return rows;
+  }, [train, interval]);
 
   const nextPredSummary = useMemo(() => {
     if (!train) return [] as { name: string; value: number }[];
