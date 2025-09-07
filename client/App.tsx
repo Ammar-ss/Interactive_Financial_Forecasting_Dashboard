@@ -12,6 +12,23 @@ import { Badge } from "./components/ui/badge";
 import { DatasetProvider, useDataset } from "./context/DatasetContext";
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 
+function datasetLabel(key: string) {
+  switch (key) {
+    case "yahoo":
+      return "Yahoo Finance (S&P 500)";
+    case "kaggle_crypto":
+      return "Kaggle — Cryptocurrency";
+    case "fred":
+      return "FRED — Treasury Yields";
+    case "worldbank":
+      return "World Bank — Global Financial Development";
+    case "alpha_vantage":
+      return "Alpha Vantage — Forex";
+    default:
+      return key;
+  }
+}
+
 const queryClient = new QueryClient();
 
 function HeaderInner() {
