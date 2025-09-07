@@ -83,77 +83,144 @@ export function sarima(values: number[], window: number, seasonalPeriod: number 
 // Lightweight LSTM-like predictor (approximation)
 // Trains a simple regression on lagged windows and applies a tanh activation to introduce non-linearity.
 // Not a true LSTM but provides a learned non-linear autoregressive predictor usable in-browser/server.
-export function lstmLike(values: number[], lookback: number): number[] {
-  const n = values.length;
-  if (n === 0) return [];
-  const preds: number[] = new Array(n).fill(NaN);
-  const m = Math.max(1, lookback);
-  const X: number[][] = [];
-  const Y: number[] = [];
-  for (let i = m; i < n; i++) {
+export function rsi(values: number[], period = 14): number[] {
+  const out: number[] = new Array(values.length).fill(NaN);
+  if (values.length < 2) return out;
+  for (let i = 0; i < values.length; i++) {
+    if (i < period) continue;
+    let gain = 0;
+    let loss = 0;
+    for (let j = i - period + 1; j <= i; j++) {
+      const diff = values[j] - values[j - 1];
+      if (diff > 0) gain += diff;
+      else loss += -diff;
+    }
+    const avgGain = gain / period;
+    const avgLoss = loss / period;
+    const rs = avgLoss === 0 ? (avgGain === 0 ? 0 : Infinity) : avgGain / avgLoss;
+    out[i] = 100 - 100 / (1 + rs);
+  }
+  return out;
+}
+
+// Train a simple feed-forward network on windowed features. This is a lightweight
+// approximation to an LSTM for demonstration and hyperparameter tuning in JS.
+export function lstmWithFeatures(
+  featureMatrix: number[][],
+  targets: number[],
+  lookback: number,
+  layers = 1,
+  units = 16,
+  epochs = 50,
+  lr = 0.01,
+): number[] {
+  // featureMatrix: array of rows (timepoints) each with featureCount features
+  const n = featureMatrix.length;
+  const featureCount = featureMatrix[0]?.length || 0;
+  const windowSize = Math.max(1, lookback);
+  const rows: number[][] = [];
+  const ys: number[] = [];
+  for (let i = windowSize; i < n; i++) {
     const row: number[] = [];
-    for (let j = i - m; j < i; j++) row.push(values[j]);
-    X.push(row);
-    Y.push(values[i]);
+    for (let j = i - windowSize; j < i; j++) {
+      row.push(...featureMatrix[j]);
+    }
+    rows.push(row);
+    ys.push(targets[i]);
   }
-  if (!X.length) return preds;
-  const cols = X[0].length;
-  // fit linear weights via normal equations (X^T X w = X^T Y)
-  const XtX: number[][] = Array.from({ length: cols }, () => new Array(cols).fill(0));
-  const Xty: number[] = new Array(cols).fill(0);
-  for (let i = 0; i < X.length; i++) {
-    for (let a = 0; a < cols; a++) {
-      for (let b = 0; b < cols; b++) {
-        XtX[a][b] += X[i][a] * X[i][b];
+  if (!rows.length) return new Array(n).fill(NaN);
+  const inputDim = rows[0].length;
+
+  // initialize weights for single hidden layer or stacked identical layers
+  // architecture: input -> hidden (units) x layers -> output
+  const rand = (a = 1) => (Math.random() * 2 - 1) * a;
+  const W1 = Array.from({ length: units }, () => Array.from({ length: inputDim }, () => rand(0.01)));
+  const b1 = new Array(units).fill(0);
+  const Ws: number[][][] = [W1];
+  const bs: number[][] = [b1];
+  for (let l = 1; l < layers; l++) {
+    Ws.push(Array.from({ length: units }, () => Array.from({ length: units }, () => rand(0.01))));
+    bs.push(new Array(units).fill(0));
+  }
+  const Wo = Array.from({ length: units }, () => rand(0.01));
+  let bo = 0;
+
+  function forward(x: number[]) {
+    // x: inputDim
+    let h = new Array(units).fill(0);
+    // first layer
+    for (let i = 0; i < units; i++) {
+      let s = 0;
+      const Wi = Ws[0][i];
+      for (let j = 0; j < inputDim; j++) s += Wi[j] * x[j];
+      s += bs[0][i];
+      h[i] = Math.tanh(s);
+    }
+    // further layers
+    for (let l = 1; l < layers; l++) {
+      const nh = new Array(units).fill(0);
+      for (let i = 0; i < units; i++) {
+        let s = 0;
+        const Wi = Ws[l][i];
+        for (let j = 0; j < units; j++) s += Wi[j] * h[j];
+        s += bs[l][i];
+        nh[i] = Math.tanh(s);
       }
-      Xty[a] += X[i][a] * Y[i];
+      h = nh;
     }
-  }
-  // regularization
-  const lambda = 1e-3;
-  for (let i = 0; i < cols; i++) XtX[i][i] += lambda;
-  // solve XtX * w = Xty with Gaussian elimination
-  const mat = XtX.map((row) => row.slice());
-  const rhs = Xty.slice();
-  const w = new Array(cols).fill(0);
-  // Gaussian elimination
-  for (let i = 0; i < cols; i++) {
-    // pivot
-    let maxRow = i;
-    for (let r = i + 1; r < cols; r++) if (Math.abs(mat[r][i]) > Math.abs(mat[maxRow][i])) maxRow = r;
-    if (maxRow !== i) {
-      const tmp = mat[i];
-      mat[i] = mat[maxRow];
-      mat[maxRow] = tmp;
-      const tt = rhs[i];
-      rhs[i] = rhs[maxRow];
-      rhs[maxRow] = tt;
-    }
-    const pivot = mat[i][i];
-    if (!pivot) continue;
-    for (let c = i; c < cols; c++) mat[i][c] /= pivot;
-    rhs[i] /= pivot;
-    for (let r = 0; r < cols; r++) {
-      if (r === i) continue;
-      const factor = mat[r][i];
-      for (let c = i; c < cols; c++) mat[r][c] -= factor * mat[i][c];
-      rhs[r] -= factor * rhs[i];
-    }
-  }
-  for (let i = 0; i < cols; i++) w[i] = rhs[i] || 0;
-
-  // generate predictions: apply model to windows, then pass through tanh scaling
-  for (let i = m; i < n; i++) {
-    const window = values.slice(i - m, i);
-    let pred = 0;
-    for (let j = 0; j < cols; j++) pred += (window[j] || 0) * w[j];
-    // non-linear squashing to avoid wild predictions
-    const baseline = window.reduce((a, b) => a + b, 0) / window.length || 0;
-    const adjusted = baseline + Math.tanh(pred - baseline) * Math.abs(pred - baseline);
-    preds[i] = adjusted;
+    let out = 0;
+    for (let i = 0; i < units; i++) out += Wo[i] * h[i];
+    out += bo;
+    return { out, h };
   }
 
-  // first positions: fill with NaN
+  function trainEpoch() {
+    // simple SGD over rows
+    for (let idx = 0; idx < rows.length; idx++) {
+      const x = rows[idx];
+      const y = ys[idx];
+      const res = forward(x);
+      const pred = res.out;
+      const err = pred - y;
+      // gradients for output
+      for (let i = 0; i < units; i++) {
+        const grad = err * res.h[i];
+        Wo[i] -= lr * grad;
+      }
+      bo -= lr * err;
+      // backprop into hidden layers (approx)
+      let dh = new Array(units).fill(0);
+      for (let i = 0; i < units; i++) dh[i] = err * Wo[i] * (1 - res.h[i] * res.h[i]);
+      // update final hidden layer weights
+      for (let l = layers - 1; l >= 0; l--) {
+        const prev = l === 0 ? x : null; // for simplicity, only update first layer using input
+        for (let i = 0; i < units; i++) {
+          // if first layer, input dim = inputDim
+          if (l === 0) {
+            for (let j = 0; j < inputDim; j++) {
+              Ws[0][i][j] -= lr * dh[i] * x[j];
+            }
+          } else {
+            // if deeper, skip precise gradients for brevity
+            for (let j = 0; j < units; j++) {
+              Ws[l][i][j] -= lr * dh[i] * (res.h[j] || 0);
+            }
+          }
+          bs[l][i] -= lr * dh[i];
+        }
+      }
+    }
+  }
+
+  for (let e = 0; e < epochs; e++) trainEpoch();
+
+  const preds = new Array(n).fill(NaN);
+  // fill predicted positions aligned with original series
+  for (let i = windowSize; i < n; i++) {
+    const x = rows[i - windowSize];
+    const res = forward(x);
+    preds[i] = res.out;
+  }
   return preds;
 }
 
