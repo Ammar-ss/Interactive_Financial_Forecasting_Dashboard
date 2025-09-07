@@ -68,7 +68,7 @@ function Layout() {
         <div className="container py-6 text-sm text-muted-foreground flex items-center justify-between">
           <span>© {new Date().getFullYear()} Ammar_Predicts</span>
           <div className="flex flex-col items-end text-right">
-            <span className="text-xs text-muted-foreground">Dataset: Yahoo Finance (historical OHLC chart API)</span>
+            <span className="text-xs text-muted-foreground">Dataset: {datasetLabel(dataset)}</span>
             <span className="">Educational use only — not financial advice</span>
           </div>
         </div>
