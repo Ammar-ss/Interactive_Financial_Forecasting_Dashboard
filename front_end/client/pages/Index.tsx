@@ -109,10 +109,13 @@ export default function Index() {
         continue;
       }
     }
-    const err = lastErr || new Error('apiFetch: all attempts failed');
-    // attach attempts for debugging
-    try { (err as any).attempts = attempts; } catch (e) {}
-    throw err;
+    // Build a serializable error object containing all attempts for easier debugging in the UI
+    const errObj: any = {
+      message: lastErr?.message ?? 'apiFetch: all attempts failed',
+      attempts,
+      candidates,
+    };
+    throw errObj;
   }
 
   const runAll = async () => {
