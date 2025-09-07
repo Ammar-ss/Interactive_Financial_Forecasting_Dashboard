@@ -232,6 +232,8 @@ export const trainAndPredict: RequestHandler = async (req, res) => {
     if (results.ma) nextPreds.ma = results.ma.preds[closes.length - 1];
     if (results.ema) nextPreds.ema = results.ema.preds[closes.length - 1];
     if (results.lr) nextPreds.lr = results.lr.preds[closes.length - 1];
+    if (results.sarima) nextPreds.sarima = results.sarima.preds[closes.length - 1];
+    if (results.lstm) nextPreds.lstm = results.lstm.preds[closes.length - 1];
 
     // Build response predictions timeline aligned with data
     const predictions: Record<string, { date: string; actual: number | null; predicted: number | null }[]> = {};
