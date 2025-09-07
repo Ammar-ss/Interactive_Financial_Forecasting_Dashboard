@@ -17,29 +17,37 @@ function toISO(d: Date | string | number): string {
 
 function httpsGetJson(url: string): Promise<any> {
   return new Promise((resolve, reject) => {
-    const req = https.get(url, { headers: { "User-Agent": "fusion-starter" } }, (res) => {
-      let data = "";
-      res.on("data", (chunk) => (data += chunk));
-      res.on("end", () => {
-        try {
-          const json = JSON.parse(data);
-          if (res.statusCode && res.statusCode >= 400) return reject(new Error(`HTTP ${res.statusCode}`));
-          resolve(json);
-        } catch (err) {
-          reject(err);
-        }
-      });
-    });
+    const req = https.get(
+      url,
+      { headers: { "User-Agent": "fusion-starter" } },
+      (res) => {
+        let data = "";
+        res.on("data", (chunk) => (data += chunk));
+        res.on("end", () => {
+          try {
+            const json = JSON.parse(data);
+            if (res.statusCode && res.statusCode >= 400)
+              return reject(new Error(`HTTP ${res.statusCode}`));
+            resolve(json);
+          } catch (err) {
+            reject(err);
+          }
+        });
+      },
+    );
     req.on("error", reject);
     req.end();
   });
 }
 
-
-
 const uploadedDatasets: Map<string, HistoricalPoint[]> = new Map();
 
-async function fetchHistorical(symbol: string, range: string, interval: string, dataset: string = "yahoo"): Promise<HistoricalPoint[]> {
+async function fetchHistorical(
+  symbol: string,
+  range: string,
+  interval: string,
+  dataset: string = "yahoo",
+): Promise<HistoricalPoint[]> {
   // Support a few datasets. For external APIs that require keys or file uploads (Kaggle, Alpha Vantage, FRED)
   // we return an informative error so the user can provide keys or upload CSVs. World Bank and Yahoo are public.
   if (dataset === "worldbank") {
@@ -47,7 +55,8 @@ async function fetchHistorical(symbol: string, range: string, interval: string, 
     const startYear = new Date().getFullYear() - 10;
     const url = `https://api.worldbank.org/v2/country/WLD/indicator/NY.GDP.MKTP.CD?date=${startYear}:${new Date().getFullYear()}&format=json&per_page=1000`;
     const json = await httpsGetJson(url);
-    if (!Array.isArray(json) || !Array.isArray(json[1])) throw new Error("World Bank API returned unexpected response");
+    if (!Array.isArray(json) || !Array.isArray(json[1]))
+      throw new Error("World Bank API returned unexpected response");
     const points = json[1]
       .filter((row: any) => row.value != null)
       .map((row: any) => ({
@@ -63,7 +72,11 @@ async function fetchHistorical(symbol: string, range: string, interval: string, 
   }
 
   if (dataset === "yahoo") {
-    const params = new URLSearchParams({ range, interval, includeAdjustedClose: "true" });
+    const params = new URLSearchParams({
+      range,
+      interval,
+      includeAdjustedClose: "true",
+    });
     const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?${params.toString()}`;
     const json = await httpsGetJson(url);
     const result = json?.chart?.result?.[0];
@@ -77,9 +90,21 @@ async function fetchHistorical(symbol: string, range: string, interval: string, 
 
     const out: HistoricalPoint[] = timestamps.map((ts: number, i: number) => ({
       date: new Date(ts * 1000).toISOString(),
-      open: Number.isFinite(open[i]) ? open[i] : Number.isFinite(close[i]) ? close[i] : 0,
-      high: Number.isFinite(high[i]) ? high[i] : Number.isFinite(close[i]) ? close[i] : 0,
-      low: Number.isFinite(low[i]) ? low[i] : Number.isFinite(close[i]) ? close[i] : 0,
+      open: Number.isFinite(open[i])
+        ? open[i]
+        : Number.isFinite(close[i])
+          ? close[i]
+          : 0,
+      high: Number.isFinite(high[i])
+        ? high[i]
+        : Number.isFinite(close[i])
+          ? close[i]
+          : 0,
+      low: Number.isFinite(low[i])
+        ? low[i]
+        : Number.isFinite(close[i])
+          ? close[i]
+          : 0,
       close: Number.isFinite(close[i]) ? close[i] : 0,
       volume: Number.isFinite(volume[i]) ? volume[i] : 0,
     }));
@@ -92,19 +117,28 @@ async function fetchHistorical(symbol: string, range: string, interval: string, 
     const data = uploadedDatasets.get(dataset)!;
     // If the uploaded CSV included a symbol/ticker column, allow filtering by the requested symbol
     if (symbol && data.length && (data[0] as any).symbol !== undefined) {
-      const filtered = data.filter((r) => ((r as any).symbol || "").toUpperCase() === String(symbol).toUpperCase());
+      const filtered = data.filter(
+        (r) =>
+          ((r as any).symbol || "").toUpperCase() ===
+          String(symbol).toUpperCase(),
+      );
       if (filtered.length) return filtered;
-      throw new Error(`No rows found for symbol ${symbol} in uploaded dataset ${dataset}`);
+      throw new Error(
+        `No rows found for symbol ${symbol} in uploaded dataset ${dataset}`,
+      );
     }
     return data;
   }
-  throw new Error(`${dataset} dataset not configured on server. For remote datasets (Kaggle, FRED, Alpha Vantage) please provide API credentials or upload CSVs.`);
+  throw new Error(
+    `${dataset} dataset not configured on server. For remote datasets (Kaggle, FRED, Alpha Vantage) please provide API credentials or upload CSVs.`,
+  );
 }
 
-
-
 function parseCsv(text: string): HistoricalPoint[] {
-  const lines = text.split(/\r?\n/).map((l) => l.trim()).filter(Boolean);
+  const lines = text
+    .split(/\r?\n/)
+    .map((l) => l.trim())
+    .filter(Boolean);
   if (!lines.length) return [];
   const headerParts = lines[0].split(/,|;|\t/).map((h) => h.trim());
   const header = headerParts.map((h) => h.toLowerCase());
@@ -121,15 +155,30 @@ function parseCsv(text: string): HistoricalPoint[] {
     .map((r) => {
       const cols = r.split(/,|;|\t/).map((c) => c.trim());
       const dateRaw = dateIdx >= 0 ? cols[dateIdx] : null;
-      const date = dateRaw ? new Date(dateRaw).toISOString() : new Date().toISOString();
-      const parseNum = (i: number) => (i >= 0 && cols[i] ? Number(cols[i].replace(/[^0-9.-]/g, "")) : NaN);
+      const date = dateRaw
+        ? new Date(dateRaw).toISOString()
+        : new Date().toISOString();
+      const parseNum = (i: number) =>
+        i >= 0 && cols[i] ? Number(cols[i].replace(/[^0-9.-]/g, "")) : NaN;
       const close = parseNum(closeIdx);
-      const open = Number.isFinite(parseNum(openIdx)) ? parseNum(openIdx) : close;
-      const high = Number.isFinite(parseNum(highIdx)) ? parseNum(highIdx) : close;
+      const open = Number.isFinite(parseNum(openIdx))
+        ? parseNum(openIdx)
+        : close;
+      const high = Number.isFinite(parseNum(highIdx))
+        ? parseNum(highIdx)
+        : close;
       const low = Number.isFinite(parseNum(lowIdx)) ? parseNum(lowIdx) : close;
       const volume = Number.isFinite(parseNum(volIdx)) ? parseNum(volIdx) : 0;
-      const point: any = { date, open: open || 0, high: high || 0, low: low || 0, close: close || 0, volume };
-      if (symbolIdx >= 0 && cols[symbolIdx]) point.symbol = String(cols[symbolIdx]).toUpperCase();
+      const point: any = {
+        date,
+        open: open || 0,
+        high: high || 0,
+        low: low || 0,
+        close: close || 0,
+        volume,
+      };
+      if (symbolIdx >= 0 && cols[symbolIdx])
+        point.symbol = String(cols[symbolIdx]).toUpperCase();
       return point as HistoricalPoint;
     })
     .filter((p) => Number.isFinite((p as any).close) && (p as any).close !== 0);
@@ -143,10 +192,15 @@ export const uploadDataset: RequestHandler = async (req, res) => {
   try {
     // Expect JSON body: { key: string, csv: string }
     const { key, csv } = req.body ?? {};
-    if (!key || typeof key !== "string") return res.status(400).json({ error: "Missing dataset key" });
-    if (!csv || typeof csv !== "string") return res.status(400).json({ error: "Missing csv content" });
+    if (!key || typeof key !== "string")
+      return res.status(400).json({ error: "Missing dataset key" });
+    if (!csv || typeof csv !== "string")
+      return res.status(400).json({ error: "Missing csv content" });
     const data = parseCsv(csv);
-    if (!data.length) return res.status(400).json({ error: "CSV parsed but no valid rows found" });
+    if (!data.length)
+      return res
+        .status(400)
+        .json({ error: "CSV parsed but no valid rows found" });
     uploadedDatasets.set(key, data);
     return res.json({ ok: true, key, rows: data.length });
   } catch (err: any) {
@@ -159,13 +213,23 @@ export const listDatasets: RequestHandler = async (_req, res) => {
   res.json({ keys });
 };
 
-import { movingAverage, exponentialMA, linearRegressionPredict, sarima, lstmWithFeatures, computeFeatures, rmse, mae, mape } from "../../AI_ML/models/ml";
+import {
+  movingAverage,
+  exponentialMA,
+  linearRegressionPredict,
+  sarima,
+  lstmWithFeatures,
+  computeFeatures,
+  rmse,
+  mae,
+  mape,
+} from "../../AI_ML/models/ml";
 
 // Simple ML models implemented in separate ai_ml module
 
 export const getHistorical: RequestHandler = async (req, res) => {
   try {
-      const symbol = (req.query.symbol as string)?.toUpperCase() ?? "AAPL";
+    const symbol = (req.query.symbol as string)?.toUpperCase() ?? "AAPL";
     const range = (req.query.range as string) ?? "1y";
     const interval = (req.query.interval as string) ?? "1d";
     const dataset = (req.query.dataset as string) ?? "yahoo";
@@ -180,10 +244,25 @@ export const getHistorical: RequestHandler = async (req, res) => {
 
 export const trainAndPredict: RequestHandler = async (req, res) => {
   try {
-    const { symbol = "AAPL", range = "1y", interval = "1d", models = ["ma", "lr", "ema"], window = 5, dataset = "yahoo", sarimaSeasonal = 5, lstmLookback = 3 } = req.body ?? {};
+    const {
+      symbol = "AAPL",
+      range = "1y",
+      interval = "1d",
+      models = ["ma", "lr", "ema"],
+      window = 5,
+      dataset = "yahoo",
+      sarimaSeasonal = 5,
+      lstmLookback = 3,
+    } = req.body ?? {};
 
-    const data = await fetchHistorical(String(symbol).toUpperCase(), String(range), String(interval), String(dataset));
-    if (!data.length) return res.status(400).json({ error: "No data returned for symbol" });
+    const data = await fetchHistorical(
+      String(symbol).toUpperCase(),
+      String(range),
+      String(interval),
+      String(dataset),
+    );
+    if (!data.length)
+      return res.status(400).json({ error: "No data returned for symbol" });
 
     // Close prices ordered by time ascending
     const closes = data.map((d) => d.close);
@@ -192,7 +271,12 @@ export const trainAndPredict: RequestHandler = async (req, res) => {
     const train = closes.slice(0, splitIdx);
     const test = closes.slice(splitIdx);
 
-    const evalOn = (series: number[]): { preds: number[]; metrics: { rmse: number; mae: number; mape: number } } => {
+    const evalOn = (
+      series: number[],
+    ): {
+      preds: number[];
+      metrics: { rmse: number; mae: number; mape: number };
+    } => {
       const preds = series;
       const metrics = {
         rmse: rmse(test, preds.slice(splitIdx)),
@@ -214,11 +298,16 @@ export const trainAndPredict: RequestHandler = async (req, res) => {
       results.ema = evalOn(preds);
     }
     if (models.includes("lr")) {
-      const preds = linearRegressionPredict(closes, Math.max(3, Number(window)));
+      const preds = linearRegressionPredict(
+        closes,
+        Math.max(3, Number(window)),
+      );
       results.lr = evalOn(preds);
     }
     if (models.includes("sarima")) {
-      const seasonal = Number.isFinite(Number(sarimaSeasonal)) ? Math.max(1, Number(sarimaSeasonal)) : 5;
+      const seasonal = Number.isFinite(Number(sarimaSeasonal))
+        ? Math.max(1, Number(sarimaSeasonal))
+        : 5;
       const preds = sarima(closes, Math.max(2, Number(window)), seasonal);
       results.sarima = evalOn(preds);
     }
@@ -226,12 +315,30 @@ export const trainAndPredict: RequestHandler = async (req, res) => {
       // build feature matrix using OHLCV + indicators
       const features = computeFeatures(data, Math.max(2, Number(window)));
       const targets = data.map((d) => d.close);
-      const look = Number.isFinite(Number(lstmLookback)) ? Math.max(1, Number(lstmLookback)) : Math.max(3, Number(window));
-      const layers = Number.isFinite(Number(req.body?.lstmLayers)) ? Math.max(1, Number(req.body.lstmLayers)) : 1;
-      const units = Number.isFinite(Number(req.body?.lstmUnits)) ? Math.max(1, Number(req.body.lstmUnits)) : 16;
-      const epochs = Number.isFinite(Number(req.body?.lstmEpochs)) ? Math.max(1, Number(req.body.lstmEpochs)) : 50;
-      const lr = Number.isFinite(Number(req.body?.lstmLR)) ? Math.max(1e-6, Number(req.body.lstmLR)) : 0.01;
-      const preds = lstmWithFeatures(features, targets, look, layers, units, epochs, lr);
+      const look = Number.isFinite(Number(lstmLookback))
+        ? Math.max(1, Number(lstmLookback))
+        : Math.max(3, Number(window));
+      const layers = Number.isFinite(Number(req.body?.lstmLayers))
+        ? Math.max(1, Number(req.body.lstmLayers))
+        : 1;
+      const units = Number.isFinite(Number(req.body?.lstmUnits))
+        ? Math.max(1, Number(req.body.lstmUnits))
+        : 16;
+      const epochs = Number.isFinite(Number(req.body?.lstmEpochs))
+        ? Math.max(1, Number(req.body.lstmEpochs))
+        : 50;
+      const lr = Number.isFinite(Number(req.body?.lstmLR))
+        ? Math.max(1e-6, Number(req.body.lstmLR))
+        : 0.01;
+      const preds = lstmWithFeatures(
+        features,
+        targets,
+        look,
+        layers,
+        units,
+        epochs,
+        lr,
+      );
       results.lstm = evalOn(preds);
     }
 
@@ -239,13 +346,16 @@ export const trainAndPredict: RequestHandler = async (req, res) => {
     if (results.ma) nextPreds.ma = results.ma.preds[closes.length - 1];
     if (results.ema) nextPreds.ema = results.ema.preds[closes.length - 1];
     if (results.lr) nextPreds.lr = results.lr.preds[closes.length - 1];
-    if (results.sarima) nextPreds.sarima = results.sarima.preds[closes.length - 1];
+    if (results.sarima)
+      nextPreds.sarima = results.sarima.preds[closes.length - 1];
     if (results.lstm) {
       const lstmPreds = results.lstm.preds || [];
       let val = lstmPreds[closes.length - 1];
       if (!Number.isFinite(val)) {
         // fallback: use last finite prediction if available, otherwise last actual close
-        const finite = lstmPreds.slice(0, closes.length).filter((x: any) => Number.isFinite(x));
+        const finite = lstmPreds
+          .slice(0, closes.length)
+          .filter((x: any) => Number.isFinite(x));
         if (finite.length) val = finite[finite.length - 1];
         else val = closes[closes.length - 1];
       }
@@ -253,12 +363,18 @@ export const trainAndPredict: RequestHandler = async (req, res) => {
     }
 
     // Build response predictions timeline aligned with data
-    const predictions: Record<string, { date: string; actual: number | null; predicted: number | null }[]> = {};
+    const predictions: Record<
+      string,
+      { date: string; actual: number | null; predicted: number | null }[]
+    > = {};
     Object.keys(results).forEach((k) => {
       predictions[k] = data.map((row, i) => ({
         date: row.date,
         actual: row.close,
-        predicted: isFinite(results[k].preds[i]) && !Number.isNaN(results[k].preds[i]) ? results[k].preds[i] : null,
+        predicted:
+          isFinite(results[k].preds[i]) && !Number.isNaN(results[k].preds[i])
+            ? results[k].preds[i]
+            : null,
       }));
     });
 
@@ -269,7 +385,7 @@ export const trainAndPredict: RequestHandler = async (req, res) => {
       data,
       splitIndex: splitIdx,
       metrics: Object.fromEntries(
-        Object.entries(results).map(([k, v]) => [k, v.metrics])
+        Object.entries(results).map(([k, v]) => [k, v.metrics]),
       ),
       predictions,
       nextDayPrediction: nextPreds,

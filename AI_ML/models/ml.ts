@@ -25,7 +25,10 @@ export function exponentialMA(values: number[], alpha: number): number[] {
   return out;
 }
 
-export function linearRegressionPredict(values: number[], lookback: number): number[] {
+export function linearRegressionPredict(
+  values: number[],
+  lookback: number,
+): number[] {
   const preds: number[] = new Array(values.length).fill(NaN);
   for (let i = lookback - 1; i < values.length; i++) {
     const xs: number[] = [];
@@ -52,7 +55,11 @@ export function linearRegressionPredict(values: number[], lookback: number): num
 // SARIMA-ish implementation (lightweight seasonal model)
 // This implementation performs seasonal decomposition using a fixed seasonal period
 // and applies a simple moving average to deseasonalized residuals for predictions.
-export function sarima(values: number[], window: number, seasonalPeriod: number = 5): number[] {
+export function sarima(
+  values: number[],
+  window: number,
+  seasonalPeriod: number = 5,
+): number[] {
   const n = values.length;
   if (!n) return [];
   // compute seasonal means
@@ -63,10 +70,14 @@ export function sarima(values: number[], window: number, seasonalPeriod: number 
     seasonalSums[idx] += values[i];
     seasonalCounts[idx] += 1;
   }
-  const seasonalMeans = seasonalSums.map((s, i) => (seasonalCounts[i] ? s / seasonalCounts[i] : 0));
+  const seasonalMeans = seasonalSums.map((s, i) =>
+    seasonalCounts[i] ? s / seasonalCounts[i] : 0,
+  );
 
   // deseasonalize
-  const deseasonalized = values.map((v, i) => v - seasonalMeans[i % seasonalPeriod]);
+  const deseasonalized = values.map(
+    (v, i) => v - seasonalMeans[i % seasonalPeriod],
+  );
 
   // smooth deseasonalized with moving average
   const smooth = movingAverage(deseasonalized, Math.max(2, window));
@@ -97,7 +108,8 @@ export function rsi(values: number[], period = 14): number[] {
     }
     const avgGain = gain / period;
     const avgLoss = loss / period;
-    const rs = avgLoss === 0 ? (avgGain === 0 ? 0 : Infinity) : avgGain / avgLoss;
+    const rs =
+      avgLoss === 0 ? (avgGain === 0 ? 0 : Infinity) : avgGain / avgLoss;
     out[i] = 100 - 100 / (1 + rs);
   }
   return out;
@@ -134,12 +146,18 @@ export function lstmWithFeatures(
   // initialize weights for single hidden layer or stacked identical layers
   // architecture: input -> hidden (units) x layers -> output
   const rand = (a = 1) => (Math.random() * 2 - 1) * a;
-  const W1 = Array.from({ length: units }, () => Array.from({ length: inputDim }, () => rand(0.01)));
+  const W1 = Array.from({ length: units }, () =>
+    Array.from({ length: inputDim }, () => rand(0.01)),
+  );
   const b1 = new Array(units).fill(0);
   const Ws: number[][][] = [W1];
   const bs: number[][] = [b1];
   for (let l = 1; l < layers; l++) {
-    Ws.push(Array.from({ length: units }, () => Array.from({ length: units }, () => rand(0.01))));
+    Ws.push(
+      Array.from({ length: units }, () =>
+        Array.from({ length: units }, () => rand(0.01)),
+      ),
+    );
     bs.push(new Array(units).fill(0));
   }
   const Wo = Array.from({ length: units }, () => rand(0.01));
@@ -190,7 +208,8 @@ export function lstmWithFeatures(
       bo -= lr * err;
       // backprop into hidden layers (approx)
       let dh = new Array(units).fill(0);
-      for (let i = 0; i < units; i++) dh[i] = err * Wo[i] * (1 - res.h[i] * res.h[i]);
+      for (let i = 0; i < units; i++)
+        dh[i] = err * Wo[i] * (1 - res.h[i] * res.h[i]);
       // update final hidden layer weights
       for (let l = layers - 1; l >= 0; l--) {
         const prev = l === 0 ? x : null; // for simplicity, only update first layer using input
@@ -224,7 +243,16 @@ export function lstmWithFeatures(
   return preds;
 }
 
-export function computeFeatures(data: { open?: number; high?: number; low?: number; close: number; volume?: number }[], window = 10) {
+export function computeFeatures(
+  data: {
+    open?: number;
+    high?: number;
+    low?: number;
+    close: number;
+    volume?: number;
+  }[],
+  window = 10,
+) {
   const closes = data.map((d) => d.close);
   const opens = data.map((d) => d.open ?? d.close);
   const highs = data.map((d) => d.high ?? d.close);
@@ -234,7 +262,16 @@ export function computeFeatures(data: { open?: number; high?: number; low?: numb
   const emaAlpha = 2 / (Math.max(2, window) + 1);
   const emaSeries = exponentialMA(closes, emaAlpha);
   const rsiSeries = rsi(closes, 14);
-  return data.map((_, i) => [closes[i], opens[i], highs[i], lows[i], vols[i], maSeries[i] ?? 0, emaSeries[i] ?? 0, rsiSeries[i] ?? 0]);
+  return data.map((_, i) => [
+    closes[i],
+    opens[i],
+    highs[i],
+    lows[i],
+    vols[i],
+    maSeries[i] ?? 0,
+    emaSeries[i] ?? 0,
+    rsiSeries[i] ?? 0,
+  ]);
 }
 
 export function rmse(yTrue: number[], yPred: number[]): number {

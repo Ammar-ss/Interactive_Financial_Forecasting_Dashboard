@@ -10,7 +10,13 @@ import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 import { Badge } from "./components/ui/badge";
 import { DatasetProvider, useDataset } from "./context/DatasetContext";
-import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 import { useEffect, useState } from "react";
 
 function datasetLabel(key: string) {
@@ -40,8 +46,8 @@ function HeaderInner() {
   useEffect(() => {
     (async () => {
       try {
-        const { apiFetch } = await import('./lib/api');
-        const list = await apiFetch('/api/datasets');
+        const { apiFetch } = await import("./lib/api");
+        const list = await apiFetch("/api/datasets");
         setUploaded(list.keys || []);
       } catch (e) {
         // ignore
@@ -52,31 +58,51 @@ function HeaderInner() {
   return (
     <div className="container flex h-16 items-center justify-between">
       <div className="flex items-center gap-3">
-        <img src="https://cdn.builder.io/api/v1/image/assets%2F54f8588728e94fb0b8646e3f37922df0%2Fcd48fb1260514aca9d84f9c0d2f57891?format=webp&width=800" alt="Ammar_Predicts logo" className="h-8 w-8 rounded-md object-cover" />
-        <span className="font-extrabold tracking-tight text-xl">Ammar_Predicts</span>
-        <Badge variant="secondary" className="ml-2">ML</Badge>
+        <img
+          src="https://cdn.builder.io/api/v1/image/assets%2F54f8588728e94fb0b8646e3f37922df0%2Fcd48fb1260514aca9d84f9c0d2f57891?format=webp&width=800"
+          alt="Ammar_Predicts logo"
+          className="h-8 w-8 rounded-md object-cover"
+        />
+        <span className="font-extrabold tracking-tight text-xl">
+          Ammar_Predicts
+        </span>
+        <Badge variant="secondary" className="ml-2">
+          ML
+        </Badge>
       </div>
 
       <div className="hidden md:flex items-center gap-4">
         <Select value={company} onValueChange={(v) => setCompany(v)}>
-          <SelectTrigger className="w-[120px]"> <SelectValue /> </SelectTrigger>
+          <SelectTrigger className="w-[120px]">
+            {" "}
+            <SelectValue />{" "}
+          </SelectTrigger>
           <SelectContent>
             {companies.map((c) => (
-              <SelectItem key={c} value={c}>{c}</SelectItem>
+              <SelectItem key={c} value={c}>
+                {c}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
 
         <Select value={dataset} onValueChange={(v) => setDataset(v as any)}>
-          <SelectTrigger className="w-[220px]"> <SelectValue /> </SelectTrigger>
+          <SelectTrigger className="w-[220px]">
+            {" "}
+            <SelectValue />{" "}
+          </SelectTrigger>
           <SelectContent>
             <SelectItem value="yahoo">Yahoo Finance — S&P 500</SelectItem>
             <SelectItem value="kaggle_crypto">Kaggle — Crypto</SelectItem>
             <SelectItem value="fred">FRED — Treasury Yields</SelectItem>
-            <SelectItem value="worldbank">World Bank — Global Finance</SelectItem>
+            <SelectItem value="worldbank">
+              World Bank — Global Finance
+            </SelectItem>
             <SelectItem value="alpha_vantage">Alpha Vantage — Forex</SelectItem>
             {uploaded.map((k) => (
-              <SelectItem key={k} value={k}>{k} (uploaded)</SelectItem>
+              <SelectItem key={k} value={k}>
+                {k} (uploaded)
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -104,8 +130,12 @@ function Layout() {
         <div className="container py-6 text-sm text-muted-foreground flex items-center justify-between">
           <span>© {new Date().getFullYear()} Ammar_Predicts</span>
           <div className="flex flex-col items-end text-right">
-            <span className="text-xs text-muted-foreground">Dataset: {datasetLabel(dataset)}</span>
-            <span className="">Educational use only — not financial advice</span>
+            <span className="text-xs text-muted-foreground">
+              Dataset: {datasetLabel(dataset)}
+            </span>
+            <span className="">
+              Educational use only — not financial advice
+            </span>
           </div>
         </div>
       </footer>

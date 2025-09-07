@@ -1,6 +1,6 @@
 export async function apiFetch(path: string, opts?: RequestInit) {
   const candidates = [
-    '',
+    "",
     window.location.origin,
     `${window.location.protocol}//localhost:8080`,
     `${window.location.protocol}//127.0.0.1:8080`,
@@ -15,7 +15,9 @@ export async function apiFetch(path: string, opts?: RequestInit) {
       const r = await fetch(url, opts ?? undefined);
       if (!r.ok) {
         const body = await r.text().catch(() => "");
-        lastErr = new Error(`fetch ${url} failed: ${r.status} ${r.statusText} ${body}`.trim());
+        lastErr = new Error(
+          `fetch ${url} failed: ${r.status} ${r.statusText} ${body}`.trim(),
+        );
         continue;
       }
       return r.json();
@@ -25,10 +27,12 @@ export async function apiFetch(path: string, opts?: RequestInit) {
     }
   }
   const errObj: any = {
-    message: lastErr?.message ?? 'apiFetch: all attempts failed',
+    message: lastErr?.message ?? "apiFetch: all attempts failed",
     attempts,
     candidates,
   };
-  try { console.error("apiFetch failed", errObj); } catch (e) {}
+  try {
+    console.error("apiFetch failed", errObj);
+  } catch (e) {}
   throw errObj;
 }
