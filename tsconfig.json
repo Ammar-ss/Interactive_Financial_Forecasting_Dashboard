@@ -28,7 +28,7 @@
     
     "baseUrl": ".",
     "paths": {
-      "@/*": ["./front_end/client/*"],
+      "@/*": ["./client/*"],
       "@shared/*": ["./shared/*"]
     }
   },
