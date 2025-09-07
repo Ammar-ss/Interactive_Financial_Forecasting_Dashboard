@@ -226,13 +226,14 @@ export default function Index() {
                       if (!txt) { setError("No CSV selected"); return; }
                       setUploading(true);
                       try {
-                        const res = await fetch('/api/datasets/upload', { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: uploadKey || dataset, csv: txt }) });
+                                        const origin = window.location.origin;
+                        const res = await fetch(`${origin}/api/datasets/upload`, { method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ key: uploadKey || dataset, csv: txt }) });
                         const j = await res.json();
                         if (!res.ok) throw new Error(j?.error || 'Upload failed');
                         setError(null);
                         setUploadFileName('');
                         // refresh uploaded list
-                        const list = await (await fetch('/api/datasets')).json();
+                        const list = await (await fetch(`${origin}/api/datasets`)).json();
                         setUploadedKeys(list.keys || []);
                         // auto-select the uploaded dataset and reload
                         setDataset(uploadKey || dataset);
