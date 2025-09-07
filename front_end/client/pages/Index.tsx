@@ -316,6 +316,25 @@ export default function Index() {
                       {train?.predictions?.ma && <Line type="monotone" dataKey="ma" stroke={modelColors.ma} dot={false} name="MA" strokeWidth={1.6} />}
                       {train?.predictions?.ema && <Line type="monotone" dataKey="ema" stroke={modelColors.ema} dot={false} name="EMA" strokeWidth={1.6} />}
                       {train?.predictions?.lr && <Line type="monotone" dataKey="lr" stroke={modelColors.lr} dot={false} name="Linear Reg" strokeWidth={1.6} />}
+                      {train?.predictions?.sarima && <Line type="monotone" dataKey="sarima" stroke={modelColors.sarima} dot={false} name="SARIMA" strokeWidth={1.6} />}
+                      {train?.predictions?.lstm && <Line type="monotone" dataKey="lstm" stroke={modelColors.lstm} dot={false} name="LSTM" strokeWidth={1.6} />}
+
+                      {/* Next-day markers */}
+                      {train?.nextDayPrediction && (() => {
+                        // compute next date as last row's date
+                        const last = (train.data || [])[train.data.length - 1];
+                        if (!last) return null;
+                        const lastDate = new Date(last.date);
+                        let stepDays = 1;
+                        if (interval === "1wk") stepDays = 7;
+                        else if (interval === "1mo") stepDays = 30;
+                        const nextDate = new Date(lastDate);
+                        nextDate.setDate(nextDate.getDate() + stepDays);
+                        const nextDateStr = nextDate.toISOString().slice(0, 10);
+                        return Object.entries(train.nextDayPrediction).map(([k, v]) => (
+                          <ReferenceDot key={k} x={nextDateStr} y={v as number} r={4} fill={(modelColors as any)[k] ?? "#000"} stroke="none" />
+                        ));
+                      })()}
                     </LineChart>
                   </ResponsiveContainer>
                 </div>
