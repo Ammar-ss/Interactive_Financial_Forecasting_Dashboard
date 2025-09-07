@@ -224,6 +224,19 @@ export function lstmWithFeatures(
   return preds;
 }
 
+export function computeFeatures(data: { open?: number; high?: number; low?: number; close: number; volume?: number }[], window = 10) {
+  const closes = data.map((d) => d.close);
+  const opens = data.map((d) => d.open ?? d.close);
+  const highs = data.map((d) => d.high ?? d.close);
+  const lows = data.map((d) => d.low ?? d.close);
+  const vols = data.map((d) => d.volume ?? 0);
+  const maSeries = movingAverage(closes, Math.max(2, window));
+  const emaAlpha = 2 / (Math.max(2, window) + 1);
+  const emaSeries = exponentialMA(closes, emaAlpha);
+  const rsiSeries = rsi(closes, 14);
+  return data.map((_, i) => [closes[i], opens[i], highs[i], lows[i], vols[i], maSeries[i] ?? 0, emaSeries[i] ?? 0, rsiSeries[i] ?? 0]);
+}
+
 export function rmse(yTrue: number[], yPred: number[]): number {
   const n = Math.min(yTrue.length, yPred.length);
   let s = 0;
