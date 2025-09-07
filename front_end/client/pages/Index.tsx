@@ -91,7 +91,7 @@ export default function Index() {
             range,
             interval,
             dataset,
-            models: [useMA && "ma", useEMA && "ema", useLR && "lr"].filter(Boolean),
+            models: [useMA && "ma", useEMA && "ema", useLR && "lr", useSARIMA && "sarima", useLSTM && "lstm"].filter(Boolean),
             window: windowSize,
           }),
         }).then((r) => r.json()),
