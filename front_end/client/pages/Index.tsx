@@ -82,29 +82,31 @@ export default function Index() {
 
   // Resilient fetch helper: try relative path first (works through preview proxy), then fallback to origin
   async function apiFetch(path: string, opts?: RequestInit) {
-    // try relative
-    try {
-      const r = await fetch(path, opts ?? undefined);
-      if (!r.ok) {
-        const body = await r.text().catch(() => "");
-        throw new Error(`${r.status} ${r.statusText} ${body}`.trim());
-      }
-      return r.json();
-    } catch (err) {
-      // network error or blocked; try explicit origin
+    const candidates = [
+      '',
+      window.location.origin,
+      `${window.location.protocol}//localhost:8080`,
+      `${window.location.protocol}//127.0.0.1:8080`,
+      `${window.location.protocol}//${window.location.hostname}:8080`,
+    ];
+    let lastErr: any = null;
+    for (const c of candidates) {
+      const url = c ? `${c}${path}` : path;
       try {
-        const origin = window.location.origin;
-        const r2 = await fetch(`${origin}${path}`, opts ?? undefined);
-        if (!r2.ok) {
-          const body = await r2.text().catch(() => "");
-          throw new Error(`${r2.status} ${r2.statusText} ${body}`.trim());
+        const r = await fetch(url, opts ?? undefined);
+        if (!r.ok) {
+          const body = await r.text().catch(() => "");
+          lastErr = new Error(`fetch ${url} failed: ${r.status} ${r.statusText} ${body}`.trim());
+          continue;
         }
-        return r2.json();
-      } catch (err2: any) {
-        // throw original network error if available
-        throw err2 || err;
+        return r.json();
+      } catch (err: any) {
+        lastErr = new Error(`fetch ${url} failed: ${err?.message || err}`);
+        // try next candidate
+        continue;
       }
     }
+    throw lastErr || new Error('apiFetch: all attempts failed');
   }
 
   const runAll = async () => {
