@@ -174,7 +174,7 @@ export default function Index() {
 
                   <div className="flex items-center gap-2">
                     <Input id="uploadKey" value={uploadKey} onChange={(e) => setUploadKey(e.target.value)} placeholder="dataset_key" />
-                    <input id="csvfile" type="file" accept=",text/csv" onChange={async (e) => {
+                    <input id="csvfile" type="file" accept=".csv,text/csv" onChange={async (e) => {
                       const f = (e.target as HTMLInputElement).files?.[0];
                       if (!f) return;
                       setUploadFileName(f.name);
@@ -182,6 +182,7 @@ export default function Index() {
                       (window as any).__latestCSV = txt;
                     }} className="hidden" />
                     <label htmlFor="csvfile" className="inline-flex items-center cursor-pointer px-3 py-2 rounded-md border border-input bg-background text-sm">Choose CSV</label>
+                    {uploadFileName ? <span className="text-sm text-muted-foreground">{uploadFileName}</span> : null}
                     <Button onClick={async () => {
                       const txt = (window as any).__latestCSV;
                       if (!txt) { setError("No CSV selected"); return; }
@@ -191,9 +192,13 @@ export default function Index() {
                         const j = await res.json();
                         if (!res.ok) throw new Error(j?.error || 'Upload failed');
                         setError(null);
+                        setUploadFileName('');
                         // refresh uploaded list
                         const list = await (await fetch('/api/datasets')).json();
                         setUploadedKeys(list.keys || []);
+                        // auto-select the uploaded dataset and reload
+                        setDataset(uploadKey || dataset);
+                        await runAll();
                       } catch (err: any) {
                         setError(err?.message || 'Upload failed');
                       } finally { setUploading(false); }
