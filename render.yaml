@@ -8,4 +8,6 @@ services:
     buildCommand: corepack enable && pnpm install && pnpm build
     startCommand: pnpm start
     healthCheckPath: /api/ping
-    envVars: []
+    envVars:
+      - key: DEBUG_URL
+        value: ""
