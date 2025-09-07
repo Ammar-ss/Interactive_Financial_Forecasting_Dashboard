@@ -30,6 +30,8 @@ const modelColors: Record<string, string> = {
   ma: "#7c3aed", // violet-600
   ema: "#0ea5e9", // sky-500
   lr: "#ef4444", // red-500
+  sarima: "#059669", // emerald-600
+  lstm: "#f59e0b", // amber-500
 };
 
 export default function Index() {
