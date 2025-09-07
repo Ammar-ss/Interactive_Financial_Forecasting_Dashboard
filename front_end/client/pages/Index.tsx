@@ -69,11 +69,8 @@ export default function Index() {
     // fetch uploaded datasets
     (async () => {
       try {
-        const res = await fetch('/api/datasets');
-        if (res.ok) {
-          const j = await res.json();
-          setUploadedKeys(j.keys || []);
-        }
+        const list = await apiFetch('/api/datasets');
+        setUploadedKeys(list.keys || []);
       } catch (e) {
         // ignore
       }
