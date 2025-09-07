@@ -244,6 +244,12 @@ export default function Index() {
                       <span className="inline-block size-3 rounded-full" style={{ backgroundColor: modelColors.sarima }} />
                       SARIMA
                     </Label>
+                    {useSARIMA && (
+                      <div className="ml-3 flex items-center gap-2">
+                        <Label className="text-xs">Seasonal</Label>
+                        <Input type="number" min={1} max={60} value={sarimaSeasonal} onChange={(e) => setSarimaSeasonal(parseInt(e.target.value || '1', 10))} className="w-20 h-8" />
+                      </div>
+                    )}
                   </div>
                   <div className="flex items-center gap-2">
                     <Switch id="lstm" checked={useLSTM} onCheckedChange={setUseLSTM} />
@@ -251,6 +257,12 @@ export default function Index() {
                       <span className="inline-block size-3 rounded-full" style={{ backgroundColor: modelColors.lstm }} />
                       LSTM
                     </Label>
+                    {useLSTM && (
+                      <div className="ml-3 flex items-center gap-2">
+                        <Label className="text-xs">Lookback</Label>
+                        <Input type="number" min={1} max={60} value={lstmLookback} onChange={(e) => setLstmLookback(parseInt(e.target.value || '1', 10))} className="w-20 h-8" />
+                      </div>
+                    )}
                   </div>
                 </div>
 
