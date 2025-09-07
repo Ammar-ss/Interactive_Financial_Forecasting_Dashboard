@@ -90,8 +90,10 @@ export default function Index() {
       `${window.location.protocol}//${window.location.hostname}:8080`,
     ];
     let lastErr: any = null;
+    const attempts: string[] = [];
     for (const c of candidates) {
       const url = c ? `${c}${path}` : path;
+      attempts.push(url);
       try {
         const r = await fetch(url, opts ?? undefined);
         if (!r.ok) {
@@ -106,7 +108,10 @@ export default function Index() {
         continue;
       }
     }
-    throw lastErr || new Error('apiFetch: all attempts failed');
+    const err = lastErr || new Error('apiFetch: all attempts failed');
+    // attach attempts for debugging
+    try { (err as any).attempts = attempts; } catch (e) {}
+    throw err;
   }
 
   const runAll = async () => {
