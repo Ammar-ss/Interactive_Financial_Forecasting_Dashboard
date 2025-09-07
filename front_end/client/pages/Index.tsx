@@ -115,6 +115,8 @@ export default function Index() {
       attempts,
       candidates,
     };
+    // log to console for developers and also throw a serializable object so UI can display details
+    try { console.error("apiFetch failed", errObj); } catch (e) {}
     throw errObj;
   }
 
