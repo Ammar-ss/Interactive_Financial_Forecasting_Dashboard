@@ -35,6 +35,22 @@ const queryClient = new QueryClient();
 function HeaderInner() {
   const { dataset, setDataset, company, setCompany } = useDataset();
   const companies = ["AAPL", "MSFT", "GOOGL", "AMZN", "TSLA"];
+  const [uploaded, setUploaded] = useState<string[]>([]);
+
+  useEffect(() => {
+    (async () => {
+      try {
+        const res = await fetch('/api/datasets');
+        if (res.ok) {
+          const j = await res.json();
+          setUploaded(j.keys || []);
+        }
+      } catch (e) {
+        // ignore
+      }
+    })();
+  }, []);
+
   return (
     <div className="container flex h-16 items-center justify-between">
       <div className="flex items-center gap-3">
@@ -61,6 +77,9 @@ function HeaderInner() {
             <SelectItem value="fred">FRED — Treasury Yields</SelectItem>
             <SelectItem value="worldbank">World Bank — Global Finance</SelectItem>
             <SelectItem value="alpha_vantage">Alpha Vantage — Forex</SelectItem>
+            {uploaded.map((k) => (
+              <SelectItem key={k} value={k}>{k} (uploaded)</SelectItem>
+            ))}
           </SelectContent>
         </Select>
       </div>
