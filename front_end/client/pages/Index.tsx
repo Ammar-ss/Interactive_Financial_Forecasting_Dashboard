@@ -173,8 +173,7 @@ export default function Index() {
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <Input id="uploadKey" value={uploadKey} onChange={(e) => setUploadKey(e.target.value)} placeholder="dataset_key" />
-                    <input id="csvfile" type="file" accept=",text/csv" onChange={async (e) => {
+                    <input id="csvfile" type="file" accept=".csv,text/csv" onChange={async (e) => {
                       const f = (e.target as HTMLInputElement).files?.[0];
                       if (!f) return;
                       setUploadFileName(f.name);
