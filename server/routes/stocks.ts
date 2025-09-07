@@ -15,63 +15,16 @@ function toISO(d: Date | string | number): string {
 }
 
 async function fetchHistorical(symbol: string, range: string, interval: string): Promise<HistoricalPoint[]> {
-  const res = await yahooFinance.historical(symbol, {
-    period1: undefined,
-    period2: undefined,
-    interval: interval as any,
-    events: undefined,
-    includeAdjustedClose: true,
-    return: "object",
-    // yahoo-finance2 supports either range string or period1/2; using range via query string
-    // but the SDK uses period params; for range, use the chart endpoint instead.
-  } as any, { validateResult: false });
-
-  // The historical() method does not accept range; if range is desired, we'll fallback to chart()
-  if (!res || res.length === 0) {
-    const chart = await yahooFinance.chart(symbol, { range, interval: interval as any });
-    const quotes = chart.quotes ?? [];
-    return quotes.map((q) => ({
-      date: toISO(q.date as any),
-      open: q.open ?? q.close ?? 0,
-      high: q.high ?? q.close ?? 0,
-      low: q.low ?? q.close ?? 0,
-      close: q.close ?? 0,
-      volume: q.volume ?? 0,
-    }));
-  }
-
-  // historical() returns full history; we will slice to match desired range using chart endpoint for timestamps
-  try {
-    const chart = await yahooFinance.chart(symbol, { range, interval: interval as any });
-    const lastDate = chart.meta?.regularMarketTime ? new Date(chart.meta.regularMarketTime * 1000) : undefined;
-    const firstTs = chart.quotes?.[0]?.date ? new Date(chart.quotes[0].date as any).getTime() : undefined;
-    const lastTs = chart.quotes?.[chart.quotes.length - 1]?.date ? new Date(chart.quotes[chart.quotes.length - 1].date as any).getTime() : undefined;
-
-    const filtered = (res ?? []).filter((r) => {
-      const t = new Date(r.date as any).getTime();
-      if (firstTs && lastTs) return t >= firstTs && t <= lastTs;
-      if (lastDate) return t <= lastDate.getTime();
-      return true;
-    });
-
-    return filtered.map((r) => ({
-      date: toISO(r.date as any),
-      open: r.open ?? r.adjClose ?? r.close ?? 0,
-      high: r.high ?? r.close ?? 0,
-      low: r.low ?? r.close ?? 0,
-      close: r.adjClose ?? r.close ?? 0,
-      volume: r.volume ?? 0,
-    }));
-  } catch {
-    return (res ?? []).map((r) => ({
-      date: toISO(r.date as any),
-      open: r.open ?? r.adjClose ?? r.close ?? 0,
-      high: r.high ?? r.close ?? 0,
-      low: r.low ?? r.close ?? 0,
-      close: r.adjClose ?? r.close ?? 0,
-      volume: r.volume ?? 0,
-    }));
-  }
+  const chart = await yahooFinance.chart(symbol, { range, interval: interval as any });
+  const quotes = chart.quotes ?? [];
+  return quotes.map((q) => ({
+    date: toISO(q.date as any),
+    open: q.open ?? q.close ?? 0,
+    high: q.high ?? q.close ?? 0,
+    low: q.low ?? q.close ?? 0,
+    close: q.close ?? 0,
+    volume: q.volume ?? 0,
+  }));
 }
 
 // Simple ML models implemented in TS
