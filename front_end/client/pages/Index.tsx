@@ -236,6 +236,20 @@ export default function Index() {
                       Linear Regression
                     </Label>
                   </div>
+                  <div className="flex items-center gap-2">
+                    <Switch id="sarima" checked={useSARIMA} onCheckedChange={setUseSARIMA} />
+                    <Label htmlFor="sarima" className="flex items-center gap-2">
+                      <span className="inline-block size-3 rounded-full" style={{ backgroundColor: modelColors.sarima }} />
+                      SARIMA
+                    </Label>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    <Switch id="lstm" checked={useLSTM} onCheckedChange={setUseLSTM} />
+                    <Label htmlFor="lstm" className="flex items-center gap-2">
+                      <span className="inline-block size-3 rounded-full" style={{ backgroundColor: modelColors.lstm }} />
+                      LSTM
+                    </Label>
+                  </div>
                 </div>
 
                 {error ? (
