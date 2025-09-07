@@ -14,7 +14,14 @@ interface DatasetContextValue {
   setCompany: (c: string) => void;
 }
 
-const DatasetContext = createContext<DatasetContextValue | undefined>(undefined);
+const defaultContext: DatasetContextValue = {
+  dataset: "yahoo",
+  setDataset: () => {},
+  company: "AAPL",
+  setCompany: () => {},
+};
+
+const DatasetContext = createContext<DatasetContextValue>(defaultContext);
 
 export const DatasetProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   const [dataset, setDataset] = useState<DatasetKey>("yahoo");
@@ -24,6 +31,12 @@ export const DatasetProvider: React.FC<{ children: React.ReactNode }> = ({ child
 
 export function useDataset() {
   const ctx = useContext(DatasetContext);
-  if (!ctx) throw new Error("useDataset must be used within DatasetProvider");
+  // If the hook is used outside the provider, return the default context but warn in dev
+  if (ctx === defaultContext) {
+    if (process.env.NODE_ENV !== "production") {
+      // eslint-disable-next-line no-console
+      console.warn("useDataset used outside DatasetProvider — using fallback defaults.");
+    }
+  }
   return ctx;
 }
