@@ -56,6 +56,19 @@ export default function Index() {
     setSymbol(company);
     // initial load
     runAll();
+    // fetch uploaded datasets
+    (async () => {
+      try {
+        const res = await fetch('/api/datasets');
+        if (res.ok) {
+          const j = await res.json();
+          setUploadedKeys(j.keys || []);
+        }
+      } catch (e) {
+        // ignore
+      }
+    })();
+
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [company]);
 
