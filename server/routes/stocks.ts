@@ -1,5 +1,4 @@
 import { RequestHandler } from "express";
-import { RequestHandler } from "express";
 import https from "https";
 
 // Using direct Yahoo Finance HTTP API via native https to avoid fetch/undici issues in Node
