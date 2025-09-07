@@ -459,6 +459,7 @@ export default function Index() {
 
                         return Object.entries(combined).map(([k, m]) => {
                           const safe = (v: any) => (isFinite(Number(v)) ? Number(v).toFixed(2) : "—");
+                          const mObj = m || { rmse: NaN, mae: NaN, mape: NaN };
                           return (
                             <Card key={k}>
                               <CardHeader className="pb-2">
@@ -475,15 +476,15 @@ export default function Index() {
                                 <div className="grid grid-cols-3 gap-3 text-sm">
                                   <div>
                                     <div className="text-muted-foreground">RMSE</div>
-                                    <div className="font-semibold">{safe(m.rmse)}</div>
+                                    <div className="font-semibold">{safe(mObj.rmse)}</div>
                                   </div>
                                   <div>
                                     <div className="text-muted-foreground">MAE</div>
-                                    <div className="font-semibold">{safe(m.mae)}</div>
+                                    <div className="font-semibold">{safe(mObj.mae)}</div>
                                   </div>
                                   <div>
                                     <div className="text-muted-foreground">MAPE</div>
-                                    <div className="font-semibold">{safe(m.mape)}{isFinite(Number(m.mape))?"%":""}</div>
+                                    <div className="font-semibold">{safe(mObj.mape)}{isFinite(Number(mObj.mape))?"%":""}</div>
                                   </div>
                                 </div>
                               </CardContent>
