@@ -16,10 +16,36 @@ for (const k of Object.keys(process.env)) {
 
 (async () => {
   try {
-    const [{ createServer }, express] = await Promise.all([
-      import("./index"),
-      import("express"),
-    ]);
+    // Import express first and monkeypatch its registration methods to avoid throws from path-to-regexp
+    const expressModule = await import("express");
+    const express = expressModule.default ?? expressModule;
+
+    // Patch get/post/use on application prototype to catch and log errors during route registration
+    try {
+      const appProto: any = express.application;
+      ['get', 'post', 'use', 'all'].forEach((method) => {
+        const orig = appProto[method];
+        if (typeof orig === 'function') {
+          appProto[method] = function patchedRegister(path: any, ...handlers: any[]) {
+            try {
+              return orig.call(this, path, ...handlers);
+            } catch (err: any) {
+              try {
+                console.error(`Route registration error for [${method}]`, String(path));
+                console.error(err && err.stack ? err.stack : err);
+              } catch (e) {}
+              // swallow registration error to keep server starting; do not register this route
+              return this;
+            }
+          };
+        }
+      });
+    } catch (e) {
+      // ignore
+    }
+
+    const { createServer } = await import("./index");
+
     const app = createServer();
     const port = process.env.PORT || 3000;
 
@@ -31,7 +57,7 @@ for (const k of Object.keys(process.env)) {
     app.use(express.static(distPath));
 
     // Handle React Router - serve index.html for all non-API routes
-    app.get("*", (req, res) => {
+    app.get("*", (req: any, res: any) => {
       // Don't serve index.html for API routes
       if (req.path.startsWith("/api/") || req.path.startsWith("/health")) {
         return res.status(404).json({ error: "API endpoint not found" });
@@ -40,37 +66,6 @@ for (const k of Object.keys(process.env)) {
       res.sendFile(path.join(distPath, "index.html"));
     });
 
-    // Defensive: sanitize any registered routes that may contain invalid path strings
-    try {
-      const router: any = (app as any)._router;
-      if (router && Array.isArray(router.stack)) {
-        for (let i = 0; i < router.stack.length; i++) {
-          const layer = router.stack[i];
-          try {
-            const route = layer && layer.route;
-            if (route && route.path) {
-              const p = route.path;
-              if (typeof p === "string") {
-                if (
-                  p.includes("${") ||
-                  p.includes("http://") ||
-                  p.includes("https://") ||
-                  !p.startsWith("/")
-                ) {
-                  // normalize to root to avoid path-to-regexp errors
-                  route.path = "/";
-                }
-              }
-            }
-          } catch (e) {
-            // ignore per-layer errors
-          }
-        }
-      }
-    } catch (e) {
-      // ignore
-    }
-
     app.listen(port, () => {
       console.log(`🚀 Fusion Starter server running on port ${port}`);
       console.log(`📱 Frontend: http://localhost:${port}`);
@@ -78,20 +73,12 @@ for (const k of Object.keys(process.env)) {
     });
   } catch (err: any) {
     try {
-      console.error(
-        "Server startup failed:",
-        err && err.stack ? err.stack : err,
-      );
+      console.error('Server startup failed:', err && err.stack ? err.stack : err);
       // Dump some environment variables that might contain route templates
-      const interesting = ["DEBUG_URL", "PING_MESSAGE", "NODE_ENV", "PORT"];
-      const envDump: Record<string, string> = {};
-      interesting.forEach((k) => {
-        envDump[k] = process.env[k] ?? "";
-      });
-      console.error(
-        "Env snapshot for debugging:",
-        JSON.stringify(envDump, null, 2),
-      );
+      const interesting = ['DEBUG_URL','PING_MESSAGE','NODE_ENV','PORT'];
+      const envDump: Record<string,string> = {};
+      interesting.forEach((k) => { envDump[k] = process.env[k] ?? ''; });
+      console.error('Env snapshot for debugging:', JSON.stringify(envDump, null, 2));
     } catch (e) {}
     // rethrow to make process exit with non-zero code
     throw err;
