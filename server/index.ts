@@ -2,7 +2,12 @@ import "dotenv/config";
 import express from "express";
 import cors from "cors";
 import { handleDemo } from "./routes/demo";
-import { getHistorical, trainAndPredict, uploadDataset, listDatasets } from "./routes/stocks";
+import {
+  getHistorical,
+  trainAndPredict,
+  uploadDataset,
+  listDatasets,
+} from "./routes/stocks";
 
 export function createServer() {
   const app = express();
@@ -20,9 +25,12 @@ export function createServer() {
     return cleaned === "" ? "/" : cleaned;
   }
 
-  const safeGet = (p: any, ...rest: any[]) => app.get(normalizePath(p), ...rest);
-  const safePost = (p: any, ...rest: any[]) => app.post(normalizePath(p), ...rest);
-  const safeUse = (p: any, ...rest: any[]) => app.use(normalizePath(p), ...rest);
+  const safeGet = (p: any, ...rest: any[]) =>
+    app.get(normalizePath(p), ...rest);
+  const safePost = (p: any, ...rest: any[]) =>
+    app.post(normalizePath(p), ...rest);
+  const safeUse = (p: any, ...rest: any[]) =>
+    app.use(normalizePath(p), ...rest);
 
   // Example API routes
   safeGet("/api/ping", (_req, res) => {
