@@ -51,7 +51,12 @@ for (const k of Object.keys(process.env)) {
             if (route && route.path) {
               const p = route.path;
               if (typeof p === "string") {
-                if (p.includes("${") || p.includes("http://") || p.includes("https://") || !p.startsWith("/")) {
+                if (
+                  p.includes("${") ||
+                  p.includes("http://") ||
+                  p.includes("https://") ||
+                  !p.startsWith("/")
+                ) {
                   // normalize to root to avoid path-to-regexp errors
                   route.path = "/";
                 }
