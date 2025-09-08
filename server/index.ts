@@ -25,28 +25,42 @@ export function createServer() {
     return cleaned === "" ? "/" : cleaned;
   }
 
-  const safeGet = (p: any, ...rest: any[]) =>
-    app.get(normalizePath(p), ...rest);
-  const safePost = (p: any, ...rest: any[]) =>
-    app.post(normalizePath(p), ...rest);
-  const safeUse = (p: any, ...rest: any[]) =>
-    app.use(normalizePath(p), ...rest);
+  function safeRegister(method: 'get' | 'post' | 'use', p: any, ...rest: any[]) {
+    try {
+      const orig = p;
+      const normalized = normalizePath(p);
+      // further guard: if normalized looks like a URL or contains an empty param token, replace with '/'
+      if (typeof normalized === 'string') {
+        if (/^https?:\/\//i.test(normalized) || /\:[\/\\]/.test(normalized) || /\/:$/.test(normalized) || normalized.includes('}:${')) {
+          console.warn('sanitize route:', orig, '->', normalized, '-> / (replaced)');
+          // register at root to avoid path-to-regexp issues
+          (app as any)[method]('/', ...rest);
+          return;
+        }
+      }
+      // Register normally
+      (app as any)[method](normalized as any, ...rest);
+    } catch (err: any) {
+      // Log and continue
+      try { console.error('Failed to register route', p, err && err.stack ? err.stack : err); } catch (e) {}
+    }
+  }
 
   // Example API routes
-  safeGet("/api/ping", (_req, res) => {
-    const ping = process.env.PING_MESSAGE ?? "ping";
+  safeRegister('get', '/api/ping', (_req: any, res: any) => {
+    const ping = process.env.PING_MESSAGE ?? 'ping';
     res.json({ message: ping });
   });
 
-  safeGet("/api/demo", handleDemo);
+  safeRegister('get', '/api/demo', handleDemo);
 
   // Stock ML routes
-  safeGet("/api/stocks/historical", getHistorical);
-  safePost("/api/stocks/train", trainAndPredict);
+  safeRegister('get', '/api/stocks/historical', getHistorical);
+  safeRegister('post', '/api/stocks/train', trainAndPredict);
 
   // Dataset upload / management
-  safePost("/api/datasets/upload", uploadDataset);
-  safeGet("/api/datasets", listDatasets);
+  safeRegister('post', '/api/datasets/upload', uploadDataset);
+  safeRegister('get', '/api/datasets', listDatasets);
 
   return app;
 }
