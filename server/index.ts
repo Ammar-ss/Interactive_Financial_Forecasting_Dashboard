@@ -25,16 +25,31 @@ export function createServer() {
     return cleaned === "" ? "/" : cleaned;
   }
 
-  function safeRegister(method: 'get' | 'post' | 'use', p: any, ...rest: any[]) {
+  function safeRegister(
+    method: "get" | "post" | "use",
+    p: any,
+    ...rest: any[]
+  ) {
     try {
       const orig = p;
       const normalized = normalizePath(p);
       // further guard: if normalized looks like a URL or contains an empty param token, replace with '/'
-      if (typeof normalized === 'string') {
-        if (/^https?:\/\//i.test(normalized) || /\:[\/\\]/.test(normalized) || /\/:$/.test(normalized) || normalized.includes('}:${')) {
-          console.warn('sanitize route:', orig, '->', normalized, '-> / (replaced)');
+      if (typeof normalized === "string") {
+        if (
+          /^https?:\/\//i.test(normalized) ||
+          /\:[\/\\]/.test(normalized) ||
+          /\/:$/.test(normalized) ||
+          normalized.includes("}:${")
+        ) {
+          console.warn(
+            "sanitize route:",
+            orig,
+            "->",
+            normalized,
+            "-> / (replaced)",
+          );
           // register at root to avoid path-to-regexp issues
-          (app as any)[method]('/', ...rest);
+          (app as any)[method]("/", ...rest);
           return;
         }
       }
@@ -42,25 +57,31 @@ export function createServer() {
       (app as any)[method](normalized as any, ...rest);
     } catch (err: any) {
       // Log and continue
-      try { console.error('Failed to register route', p, err && err.stack ? err.stack : err); } catch (e) {}
+      try {
+        console.error(
+          "Failed to register route",
+          p,
+          err && err.stack ? err.stack : err,
+        );
+      } catch (e) {}
     }
   }
 
   // Example API routes
-  safeRegister('get', '/api/ping', (_req: any, res: any) => {
-    const ping = process.env.PING_MESSAGE ?? 'ping';
+  safeRegister("get", "/api/ping", (_req: any, res: any) => {
+    const ping = process.env.PING_MESSAGE ?? "ping";
     res.json({ message: ping });
   });
 
-  safeRegister('get', '/api/demo', handleDemo);
+  safeRegister("get", "/api/demo", handleDemo);
 
   // Stock ML routes
-  safeRegister('get', '/api/stocks/historical', getHistorical);
-  safeRegister('post', '/api/stocks/train', trainAndPredict);
+  safeRegister("get", "/api/stocks/historical", getHistorical);
+  safeRegister("post", "/api/stocks/train", trainAndPredict);
 
   // Dataset upload / management
-  safeRegister('post', '/api/datasets/upload', uploadDataset);
-  safeRegister('get', '/api/datasets', listDatasets);
+  safeRegister("post", "/api/datasets/upload", uploadDataset);
+  safeRegister("get", "/api/datasets", listDatasets);
 
   return app;
 }
