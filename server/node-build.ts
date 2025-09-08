@@ -40,6 +40,32 @@ for (const k of Object.keys(process.env)) {
       res.sendFile(path.join(distPath, "index.html"));
     });
 
+    // Defensive: sanitize any registered routes that may contain invalid path strings
+    try {
+      const router: any = (app as any)._router;
+      if (router && Array.isArray(router.stack)) {
+        for (let i = 0; i < router.stack.length; i++) {
+          const layer = router.stack[i];
+          try {
+            const route = layer && layer.route;
+            if (route && route.path) {
+              const p = route.path;
+              if (typeof p === "string") {
+                if (p.includes("${") || p.includes("http://") || p.includes("https://") || !p.startsWith("/")) {
+                  // normalize to root to avoid path-to-regexp errors
+                  route.path = "/";
+                }
+              }
+            }
+          } catch (e) {
+            // ignore per-layer errors
+          }
+        }
+      }
+    } catch (e) {
+      // ignore
+    }
+
     app.listen(port, () => {
       console.log(`🚀 Fusion Starter server running on port ${port}`);
       console.log(`📱 Frontend: http://localhost:${port}`);
