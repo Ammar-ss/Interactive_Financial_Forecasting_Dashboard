@@ -30,12 +30,17 @@ try {
   });
 } catch (err: any) {
   try {
-    console.error('Server startup failed:', err && err.stack ? err.stack : err);
+    console.error("Server startup failed:", err && err.stack ? err.stack : err);
     // Dump some environment variables that might contain route templates
-    const interesting = ['DEBUG_URL','PING_MESSAGE','NODE_ENV','PORT'];
-    const envDump: Record<string,string> = {};
-    interesting.forEach((k) => { envDump[k] = process.env[k] ?? ''; });
-    console.error('Env snapshot for debugging:', JSON.stringify(envDump, null, 2));
+    const interesting = ["DEBUG_URL", "PING_MESSAGE", "NODE_ENV", "PORT"];
+    const envDump: Record<string, string> = {};
+    interesting.forEach((k) => {
+      envDump[k] = process.env[k] ?? "";
+    });
+    console.error(
+      "Env snapshot for debugging:",
+      JSON.stringify(envDump, null, 2),
+    );
   } catch (e) {}
   // rethrow to make process exit with non-zero code
   throw err;
