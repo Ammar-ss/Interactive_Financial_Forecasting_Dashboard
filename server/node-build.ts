@@ -10,7 +10,10 @@ for (const k of Object.keys(process.env)) {
 
 (async () => {
   try {
-    const [{ createServer }, express] = await Promise.all([import("./index"), import("express")]);
+    const [{ createServer }, express] = await Promise.all([
+      import("./index"),
+      import("express"),
+    ]);
     const app = createServer();
     const port = process.env.PORT || 3000;
 
@@ -38,12 +41,20 @@ for (const k of Object.keys(process.env)) {
     });
   } catch (err: any) {
     try {
-      console.error('Server startup failed:', err && err.stack ? err.stack : err);
+      console.error(
+        "Server startup failed:",
+        err && err.stack ? err.stack : err,
+      );
       // Dump some environment variables that might contain route templates
-      const interesting = ['DEBUG_URL','PING_MESSAGE','NODE_ENV','PORT'];
-      const envDump: Record<string,string> = {};
-      interesting.forEach((k) => { envDump[k] = process.env[k] ?? ''; });
-      console.error('Env snapshot for debugging:', JSON.stringify(envDump, null, 2));
+      const interesting = ["DEBUG_URL", "PING_MESSAGE", "NODE_ENV", "PORT"];
+      const envDump: Record<string, string> = {};
+      interesting.forEach((k) => {
+        envDump[k] = process.env[k] ?? "";
+      });
+      console.error(
+        "Env snapshot for debugging:",
+        JSON.stringify(envDump, null, 2),
+      );
     } catch (e) {}
     // rethrow to make process exit with non-zero code
     throw err;
