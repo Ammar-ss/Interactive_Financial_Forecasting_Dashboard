@@ -3,8 +3,14 @@ import path from "path";
 // sanitize any environment placeholder values before importing server modules
 for (const k of Object.keys(process.env)) {
   const v = process.env[k] ?? "";
-  if (typeof v === "string" && v.includes("${")) {
-    process.env[k] = v.replace(/\$\{[^}]*\}/g, "");
+  if (typeof v === "string") {
+    if (v.includes("${")) {
+      process.env[k] = v.replace(/\$\{[^}]*\}/g, "");
+    }
+    // If an env var contains an absolute URL, blank it out to avoid accidental use as an Express route
+    if (/^https?:\/\//i.test(process.env[k] || "")) {
+      process.env[k] = "";
+    }
   }
 }
 
