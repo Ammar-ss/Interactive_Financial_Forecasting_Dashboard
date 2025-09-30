@@ -10,6 +10,7 @@ import {
 } from "./routes/stocks";
 import { getMetalsHistory } from "./routes/metals";
 import { fetchAndStore, getStored } from "./routes/ingest";
+import { echo } from "./routes/debug";
 
 export function createServer() {
   const app = express();
@@ -98,6 +99,9 @@ export function createServer() {
   // ingestion endpoints: fetch and persist to local store (database/metals.json)
   safeRegister("post", "/api/metals/fetch-and-store", fetchAndStore);
   safeRegister("get", "/api/metals/stored", getStored);
+
+  // debug
+  safeRegister("post", "/api/debug/echo", echo);
 
   return app;
 }
