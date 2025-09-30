@@ -141,6 +141,8 @@ function parseCsv(text: string): HistoricalPoint[] {
     .filter(Boolean);
   if (!lines.length) return [];
   const headerParts = lines[0].split(/,|;|\t/).map((h) => h.trim());
+  // strip BOM if present on first header
+  if (headerParts.length) headerParts[0] = headerParts[0].replace(/^\uFEFF/, "");
   const header = headerParts.map((h) => h.toLowerCase());
   const rows = lines.slice(1);
   const dateIdx = header.findIndex((h) => /date|timestamp|day/.test(h));
@@ -151,13 +153,29 @@ function parseCsv(text: string): HistoricalPoint[] {
   const volIdx = header.findIndex((h) => /vol|volume/.test(h));
   const symbolIdx = header.findIndex((h) => /symbol|ticker|code/.test(h));
 
+  function safeParseDate(v: any) {
+    try {
+      if (!v && v !== 0) return new Date().toISOString();
+      const s = String(v).trim().replace(/^"|"$/g, "");
+      // try direct parse
+      const d = new Date(s);
+      if (!isNaN(d.getTime())) return d.toISOString();
+      // try adding Z if missing timezone
+      const d2 = new Date(s + "Z");
+      if (!isNaN(d2.getTime())) return d2.toISOString();
+      // try replace space with T
+      const d3 = new Date(s.replace(" ", "T"));
+      if (!isNaN(d3.getTime())) return d3.toISOString();
+    } catch (e) {}
+    // fallback to now
+    return new Date().toISOString();
+  }
+
   const out: HistoricalPoint[] = rows
     .map((r) => {
       const cols = r.split(/,|;|\t/).map((c) => c.trim());
       const dateRaw = dateIdx >= 0 ? cols[dateIdx] : null;
-      const date = dateRaw
-        ? new Date(dateRaw).toISOString()
-        : new Date().toISOString();
+      const date = safeParseDate(dateRaw);
       const parseNum = (i: number) =>
         i >= 0 && cols[i] ? Number(cols[i].replace(/[^0-9.-]/g, "")) : NaN;
       const close = parseNum(closeIdx);
