@@ -338,52 +338,79 @@ export default function Index() {
                       {uploading ? "Uploading..." : "Upload CSV"}
                     </Button>
 
-                    <Button
-                      onClick={async () => {
-                        // Fetch metals (XAU/XAG) from server and upload as a dataset for training convenience
-                        setLoading(true);
-                        setError(null);
-                        try {
-                          const ds = dataset as string;
-                          const resp = await apiFetch(`/api/metals/history?dataset=${encodeURIComponent(ds)}`);
-                          if (resp?.error) throw new Error(resp.error);
-                          // resp.data is an object keyed by symbol
-                          // Convert to a CSV with columns: date,open,high,low,close,volume,symbol
-                          const parts: string[] = [];
-                          parts.push(["date","open","high","low","close","volume","symbol"].join(","));
-                          for (const sym of Object.keys(resp.data || {})) {
-                            const arr = resp.data[sym] || [];
-                            for (const row of arr) {
-                              const date = row.date;
-                              // use close as all OHLC values
-                              const close = row.close ?? row.price_inr ?? row.price_usd ?? "";
-                              const line = [date, close, close, close, close, 0, sym].join(",");
-                              parts.push(line);
+                    <div className="flex items-center gap-2">
+                      <Button
+                        onClick={async () => {
+                          // Fetch metals (XAU/XAG) from server and upload as a dataset for training convenience
+                          setLoading(true);
+                          setError(null);
+                          try {
+                            const ds = dataset as string;
+                            const resp = await apiFetch(`/api/metals/history?dataset=${encodeURIComponent(ds)}`);
+                            if (resp?.error) throw new Error(resp.error);
+                            // resp.data is an object keyed by symbol
+                            // Convert to a CSV with columns: date,open,high,low,close,volume,symbol
+                            const parts: string[] = [];
+                            parts.push(["date","open","high","low","close","volume","symbol"].join(","));
+                            for (const sym of Object.keys(resp.data || {})) {
+                              const arr = resp.data[sym] || [];
+                              for (const row of arr) {
+                                const date = row.date;
+                                // use close as all OHLC values
+                                const close = row.close ?? row.price_inr ?? row.price_usd ?? "";
+                                const line = [date, close, close, close, close, 0, sym].join(",");
+                                parts.push(line);
+                              }
                             }
+                            const csv = parts.join("\n");
+                            const key = `metals_${ds}_${Date.now()}`;
+                            await apiFetch(`/api/datasets/upload`, {
+                              method: "POST",
+                              headers: { "Content-Type": "application/json" },
+                              body: JSON.stringify({ key, csv }),
+                            });
+                            const list = await apiFetch(`/api/datasets`);
+                            setUploadedKeys(list.keys || []);
+                            setDataset(key);
+                            // set symbol to selected symbol and run
+                            await runAll();
+                          } catch (err: any) {
+                            setError(err?.message || "Failed to load metals");
+                            setErrorDetail(err);
+                          } finally {
+                            setLoading(false);
                           }
-                          const csv = parts.join("\n");
-                          const key = `metals_${ds}_${Date.now()}`;
-                          await apiFetch(`/api/datasets/upload`, {
-                            method: "POST",
-                            headers: { "Content-Type": "application/json" },
-                            body: JSON.stringify({ key, csv }),
-                          });
-                          const list = await apiFetch(`/api/datasets`);
-                          setUploadedKeys(list.keys || []);
-                          setDataset(key);
-                          // set symbol to selected symbol and run
-                          await runAll();
-                        } catch (err: any) {
-                          setError(err?.message || "Failed to load metals");
-                          setErrorDetail(err);
-                        } finally {
-                          setLoading(false);
-                        }
-                      }}
-                      className="h-10 px-4"
-                    >
-                      Load & Use Metals Data
-                    </Button>
+                        }}
+                        className="h-10 px-4"
+                      >
+                        Load & Use Metals Data
+                      </Button>
+
+                      <Button
+                        variant="outline"
+                        onClick={async () => {
+                          setLoading(true);
+                          try {
+                            const ds = dataset as string;
+                            const r = await apiFetch(`/api/metals/fetch-and-store?dataset=${encodeURIComponent(ds)}`, { method: "POST" });
+                            if (r?.error) throw new Error(r.error);
+                            // show stored confirmation
+                            setError(null);
+                            setErrorDetail(null);
+                            // refresh stored view by calling server stored endpoint
+                            await apiFetch(`/api/metals/stored`);
+                          } catch (err: any) {
+                            setError(err?.message || "Failed to store on server");
+                            setErrorDetail(err);
+                          } finally {
+                            setLoading(false);
+                          }
+                        }}
+                        className="h-10 px-3"
+                      >
+                        Fetch & Store (Server)
+                      </Button>
+                    </div>
                   </div>
 
                   <Button
