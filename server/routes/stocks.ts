@@ -190,14 +190,30 @@ function parseCsv(text: string): HistoricalPoint[] {
 
 export const uploadDataset: RequestHandler = async (req, res) => {
   try {
-    // Expect JSON body: { key: string, csv: string }
-    const contentType = req.headers["content-type"] || "";
+    // Accept multiple forms of payload for convenience:
+    // - JSON body: { key, csv }
+    // - raw text body (CSV)
+    // - form-style where csv is provided in req.body.csv
+    const contentType = (req.headers["content-type"] || "").toLowerCase();
     const bodySize = (req as any).headers && (req as any).headers["content-length"] ? Number((req as any).headers["content-length"]) : undefined;
-    const { key, csv } = req.body ?? {};
+
+    let key: string | undefined;
+    let csv: string | undefined;
+
+    if (typeof req.body === "string") {
+      // raw text body (likely text/csv)
+      csv = req.body as string;
+      key = String(req.query?.key || req.headers["x-dataset-key"] || "uploaded_csv");
+    } else if (req.body && typeof req.body === "object") {
+      key = req.body.key || req.query?.key || req.headers["x-dataset-key"];
+      csv = req.body.csv || req.body.CSV || req.body.content;
+    }
+
     if (!key || typeof key !== "string")
       return res.status(400).json({ error: "Missing dataset key", received: { contentType, bodySize, bodyType: typeof req.body } });
     if (!csv || typeof csv !== "string")
       return res.status(400).json({ error: "Missing csv content", received: { contentType, bodySize, bodyType: typeof req.body } });
+
     const data = parseCsv(csv);
     if (!data.length)
       return res
