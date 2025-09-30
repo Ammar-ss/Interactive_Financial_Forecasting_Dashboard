@@ -241,10 +241,11 @@ export const uploadDataset: RequestHandler = async (req, res) => {
       return res.status(400).json({ error: "Missing csv content", received: { contentType, bodySize, bodyType: typeof req.body } });
 
     const data = parseCsv(csv);
-    if (!data.length)
-      return res
-        .status(400)
-        .json({ error: "CSV parsed but no valid rows found" });
+    if (!data.length) {
+      // include diagnostic info
+      const sampleLines = (csv || "").split(/\r?\n/).slice(0, 10);
+      return res.status(400).json({ error: "CSV parsed but no valid rows found", rowsParsed: 0, sampleLines });
+    }
     uploadedDatasets.set(key, data);
     console.debug && console.debug(`uploaded dataset ${key} rows=${data.length}`);
     return res.json({ ok: true, key, rows: data.length });
