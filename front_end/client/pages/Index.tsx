@@ -309,47 +309,78 @@ export default function Index() {
                     >
                       Choose CSV
                     </label>
-                    <Button
-                      onClick={async () => {
-                        const txt = (window as any).__latestCSV;
-                        if (!txt) {
-                          setError("No CSV selected");
-                          return;
-                        }
-                        setUploading(true);
-                        try {
+                    <div className="flex items-center gap-2">
+                      <Button
+                        onClick={async () => {
+                          const txt = (window as any).__latestCSV;
+                          if (!txt) {
+                            setError("No CSV selected");
+                            return;
+                          }
+                          setUploading(true);
                           try {
-                            const j = await apiFetch(`/api/datasets/upload`, {
+                            try {
+                              const j = await apiFetch(`/api/datasets/upload`, {
+                                method: "POST",
+                                headers: { "Content-Type": "application/json" },
+                                body: JSON.stringify({
+                                  key: uploadKey || dataset,
+                                  csv: txt,
+                                }),
+                              });
+                              setError(null);
+                              setUploadFileName("");
+                              // refresh uploaded list
+                              const list = await apiFetch(`/api/datasets`);
+                              setUploadedKeys(list.keys || []);
+                              // auto-select the uploaded dataset and reload
+                              setDataset(uploadKey || dataset);
+                              await runAll();
+                            } catch (err: any) {
+                              throw err;
+                            }
+                          } catch (err: any) {
+                            setError(err?.message || "Upload failed");
+                            setErrorDetail(err);
+                          } finally {
+                            setUploading(false);
+                          }
+                        }}
+                        disabled={uploading}
+                        className="h-10 px-4"
+                      >
+                        {uploading ? "Uploading..." : "Upload CSV"}
+                      </Button>
+
+                      <Button
+                        variant="outline"
+                        onClick={async () => {
+                          const txt = (window as any).__latestCSV;
+                          if (!txt) {
+                            setError("No CSV selected for test");
+                            return;
+                          }
+                          setLoading(true);
+                          try {
+                            const r = await apiFetch(`/api/debug/echo`, {
                               method: "POST",
                               headers: { "Content-Type": "application/json" },
-                              body: JSON.stringify({
-                                key: uploadKey || dataset,
-                                csv: txt,
-                              }),
+                              body: JSON.stringify({ key: uploadKey || dataset, csv: txt }),
                             });
                             setError(null);
-                            setUploadFileName("");
-                            // refresh uploaded list
-                            const list = await apiFetch(`/api/datasets`);
-                            setUploadedKeys(list.keys || []);
-                            // auto-select the uploaded dataset and reload
-                            setDataset(uploadKey || dataset);
-                            await runAll();
+                            setErrorDetail(r);
                           } catch (err: any) {
-                            throw err;
+                            setError(err?.message || "Echo failed");
+                            setErrorDetail(err?.details ?? err);
+                          } finally {
+                            setLoading(false);
                           }
-                        } catch (err: any) {
-                          setError(err?.message || "Upload failed");
-                          setErrorDetail(err);
-                        } finally {
-                          setUploading(false);
-                        }
-                      }}
-                      disabled={uploading}
-                      className="h-10 px-4"
-                    >
-                      {uploading ? "Uploading..." : "Upload CSV"}
-                    </Button>
+                        }}
+                        className="h-10 px-3"
+                      >
+                        Test Upload (echo)
+                      </Button>
+                    </div>
 
                     <div className="flex items-center gap-2">
                       <Button
