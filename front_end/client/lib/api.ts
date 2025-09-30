@@ -69,11 +69,13 @@ export async function apiFetch(path: string, opts?: RequestInit) {
     attempts,
     candidates,
   };
+  const joinedAttempts = Array.isArray(attempts) ? attempts.join(", ") : String(attempts);
+  const finalMessage = `${errObj.message} (attempts: ${joinedAttempts})`;
   try {
     // eslint-disable-next-line no-console
-    console.error("apiFetch failed", errObj);
+    console.error("apiFetch failed", JSON.stringify(errObj, null, 2));
   } catch (e) {}
-  const e = new Error(errObj.message);
+  const e = new Error(finalMessage);
   // attach details for debugging (non-enumerable)
   try {
     (e as any).details = errObj;
