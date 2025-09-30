@@ -137,8 +137,11 @@ export default function Index() {
         throw new Error(`Training request failed: ${err?.message || err}`);
       }
     } catch (e: any) {
-      setError(e?.message ?? "Something went wrong");
-      setErrorDetail(e);
+      const msg = e?.message ?? "Something went wrong";
+      setError(msg);
+      // Prefer structured details if provided by apiFetch
+      const detail = e?.details ?? (e?.stack ? { name: e.name, message: e.message, stack: e.stack } : e);
+      setErrorDetail(detail);
     } finally {
       setLoading(false);
     }
