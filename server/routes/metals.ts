@@ -34,92 +34,60 @@ function cacheKey(keyParts: string[]) {
   return keyParts.join("|");
 }
 
+// Only support two data sources: 'yahoo' (preferred for INR tickers) and 'worldbank' (macro examples)
 export const getMetalsHistory: RequestHandler = async (req, res) => {
   try {
-    const raw = String(req.query.symbols ?? "XAU,XAG");
-    const symbols = raw
-      .split(",")
-      .map((s) => s.trim().toUpperCase())
-      .filter(Boolean);
+    const dataset = String(req.query.dataset || "yahoo").toLowerCase();
+    if (!["yahoo", "worldbank"].includes(dataset)) {
+      return res.status(400).json({ error: "Only 'yahoo' and 'worldbank' datasets are supported" });
+    }
+
+    // For metals we only allow XAU and XAG timeline
+    const symbols = ["XAU", "XAG"];
 
     const start = String(req.query.start || "");
     const end = String(req.query.end || "");
 
-    const apiKey = process.env.METALS_API_KEY;
-
-    const key = cacheKey(["metals", symbols.join(","), start, end, apiKey ? "metalsapi" : "yahoo"]);
+    const key = cacheKey(["metals", dataset, symbols.join(","), start, end]);
     const cached = cache.get(key);
     if (cached && Date.now() - cached.ts < TTL) {
       return res.json({ cached: true, source: cached.data.source, data: cached.data.data });
     }
 
-    // If METALS_API_KEY is present, use Metals-API (rates in USD), then convert to INR using exchangerate.host timeseries
-    if (apiKey) {
-      // Build timeseries query
-      const today = new Date();
-      const defaultStart = new Date(today.getTime() - 365 * 24 * 60 * 60 * 1000);
-      const s = start || defaultStart.toISOString().slice(0, 10);
-      const e = end || today.toISOString().slice(0, 10);
-
-      const symbolsParam = symbols.join(",");
-      const metalsUrl = `https://metals-api.com/api/timeseries?access_key=${encodeURIComponent(
-        apiKey,
-      )}&start_date=${s}&end_date=${e}&base=USD&symbols=${encodeURIComponent(symbolsParam)}`;
-
-      const metalsJson = await httpsGetJson(metalsUrl);
-      if (!metalsJson || !metalsJson.rates) {
-        throw new Error("Unexpected response from Metals API");
-      }
-
-      // Fetch USD->INR timeseries to convert
-      const fxUrl = `https://api.exchangerate.host/timeseries?start_date=${s}&end_date=${e}&base=USD&symbols=INR`;
-      const fxJson = await httpsGetJson(fxUrl);
-      if (!fxJson || !fxJson.rates) {
-        throw new Error("Unexpected response from FX API");
-      }
-
-      // Build timeline
-      const dates = Object.keys(metalsJson.rates).sort();
-      const out: Record<string, { date: string; symbol: string; price_usd: number | null; price_inr: number | null }[]> = {};
-      for (const sym of symbols) out[sym] = [];
-
-      for (const d of dates) {
-        const dayRates = metalsJson.rates[d] || {};
-        const fxRate = (fxJson.rates[d] && fxJson.rates[d].INR) || null;
-        for (const sym of symbols) {
-          const val = typeof dayRates[sym] === "number" ? dayRates[sym] : null;
-          const price_inr = val !== null && fxRate ? Number((val * fxRate).toFixed(4)) : null;
-          out[sym].push({ date: d, symbol: sym, price_usd: val, price_inr });
-        }
-      }
-
-      const payload = { source: "metals-api+exchangerate.host", data: out };
+    if (dataset === "worldbank") {
+      // Return a simple synthetic series mapped from World Bank GDP as an example dataset
+      const startYear = new Date().getFullYear() - 10;
+      const url = `https://api.worldbank.org/v2/country/WLD/indicator/NY.GDP.MKTP.CD?date=${startYear}:${new Date().getFullYear()}&format=json&per_page=1000`;
+      const json = await httpsGetJson(url);
+      if (!Array.isArray(json) || !Array.isArray(json[1]))
+        throw new Error("World Bank API returned unexpected response");
+      const points = json[1]
+        .filter((row: any) => row.value != null)
+        .map((row: any) => ({ date: `${row.date}-01-01T00:00:00.000Z`, value: row.value }))
+        .reverse();
+      const payload = { source: "worldbank", data: { WLD: points } };
       cache.set(key, { ts: Date.now(), data: payload });
       return res.json(payload);
     }
 
-    // Fallback: use Yahoo Finance public chart API for INR tickers (e.g. XAUINR=X)
-    // Map requested symbols to Yahoo tickers
-    const yahooMap: Record<string, string> = {
-      XAU: "XAUINR=X",
-      XAG: "XAGINR=X",
-      GOLD: "XAUINR=X",
-      SILVER: "XAGINR=X",
-    };
+    // dataset === 'yahoo' (default)
+    const today = new Date();
+    const defaultStart = new Date(today.getTime() - 365 * 24 * 60 * 60 * 1000);
+    const s = start || defaultStart.toISOString().slice(0, 10);
+    const e = end || today.toISOString().slice(0, 10);
 
-    const today2 = new Date();
-    const defaultStart2 = new Date(today2.getTime() - 365 * 24 * 60 * 60 * 1000);
-    const s2 = start || defaultStart2.toISOString().slice(0, 10);
-    const e2 = end || today2.toISOString().slice(0, 10);
-
-    // Yahoo chart API uses epoch seconds for period1/period2
-    const period1 = Math.floor(new Date(s2 + "T00:00:00Z").getTime() / 1000);
-    const period2 = Math.floor(new Date(e2 + "T23:59:59Z").getTime() / 1000);
+    const period1 = Math.floor(new Date(s + "T00:00:00Z").getTime() / 1000);
+    const period2 = Math.floor(new Date(e + "T23:59:59Z").getTime() / 1000);
 
     const out: Record<string, { date: string; close: number }[]> = {};
 
+    const yahooMap: Record<string, string> = {
+      XAU: "XAUINR=X",
+      XAG: "XAGINR=X",
+    };
+
     for (const sym of symbols) {
-      const ticker = yahooMap[sym] || `${sym}INR=X`;
+      const ticker = yahooMap[sym];
       const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(ticker)}?period1=${period1}&period2=${period2}&interval=1d&includePrePost=false`;
       try {
         const json = await httpsGetJson(url);
