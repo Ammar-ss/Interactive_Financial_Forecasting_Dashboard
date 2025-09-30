@@ -105,9 +105,19 @@ export default function Index() {
         useLSTM && "lstm",
       ].filter(Boolean) as string[];
       setLastModels(modelsArray);
-      const [h, t] = await Promise.all([
-        apiFetch(`/api/stocks/historical?${qs.toString()}`),
-        apiFetch(`/api/stocks/train`, {
+      // Fetch historical first, then train — this gives clearer errors and avoids Promise.all hiding which request failed
+      let h: any = null;
+      let t: any = null;
+      try {
+        h = await apiFetch(`/api/stocks/historical?${qs.toString()}`);
+        if (h?.error) throw new Error(h.error);
+        setHist(h as HistoricalResponse);
+      } catch (err: any) {
+        throw new Error(`Historical fetch failed: ${err?.message || err}`);
+      }
+
+      try {
+        t = await apiFetch(`/api/stocks/train`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify({
@@ -120,12 +130,12 @@ export default function Index() {
             sarimaSeasonal,
             lstmLookback,
           }),
-        }),
-      ]);
-      if ((h as any).error) throw new Error((h as any).error);
-      if ((t as any).error) throw new Error((t as any).error);
-      setHist(h as HistoricalResponse);
-      setTrain(t as TrainResponseBody);
+        });
+        if (t?.error) throw new Error(t.error);
+        setTrain(t as TrainResponseBody);
+      } catch (err: any) {
+        throw new Error(`Training request failed: ${err?.message || err}`);
+      }
     } catch (e: any) {
       setError(e?.message ?? "Something went wrong");
       setErrorDetail(e);
