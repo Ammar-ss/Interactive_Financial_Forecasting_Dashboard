@@ -1,10 +1,8 @@
 export async function apiFetch(path: string, opts?: RequestInit) {
   const candidates = [
     "",
+    // prefer same-origin absolute URL as fallback
     window.location.origin,
-    `${window.location.protocol}//localhost:8080`,
-    `${window.location.protocol}//127.0.0.1:8080`,
-    `${window.location.protocol}//${window.location.hostname}:8080`,
   ];
   let lastErr: any = null;
   const attempts: string[] = [];
