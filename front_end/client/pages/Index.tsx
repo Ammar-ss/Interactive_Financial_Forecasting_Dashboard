@@ -201,13 +201,30 @@ export default function Index() {
                 <div className="flex flex-wrap items-end gap-3">
                   <div className="w-32">
                     <Label htmlFor="symbol">Symbol</Label>
-                    <Input
-                      id="symbol"
-                      value={symbol}
-                      onChange={(e) => setSymbol(e.target.value.toUpperCase())}
-                      placeholder="AAPL"
-                    />
+                    <Select value={symbol} onValueChange={(v) => setSymbol(String(v))}>
+                      <SelectTrigger className="w-[120px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="XAU">XAU (Gold)</SelectItem>
+                        <SelectItem value="XAG">XAG (Silver)</SelectItem>
+                      </SelectContent>
+                    </Select>
                   </div>
+
+                  <div className="w-40">
+                    <Label htmlFor="dataset">Dataset</Label>
+                    <Select value={dataset as string} onValueChange={(v) => setDataset(v as any)}>
+                      <SelectTrigger className="w-[120px]">
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="yahoo">Yahoo Finance (INR)</SelectItem>
+                        <SelectItem value="worldbank">World Bank (sample)</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+
                   <div>
                     <Label>Range</Label>
                     <Select
