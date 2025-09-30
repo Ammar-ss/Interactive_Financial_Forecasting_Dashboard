@@ -73,5 +73,10 @@ export async function apiFetch(path: string, opts?: RequestInit) {
     // eslint-disable-next-line no-console
     console.error("apiFetch failed", errObj);
   } catch (e) {}
-  throw errObj;
+  const e = new Error(errObj.message);
+  // attach details for debugging (non-enumerable)
+  try {
+    (e as any).details = errObj;
+  } catch (ex) {}
+  throw e;
 }
