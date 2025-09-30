@@ -16,8 +16,16 @@ export function createServer() {
 
   // Middleware
   app.use(cors());
-  app.use(express.json());
-  app.use(express.urlencoded({ extended: true }));
+  // increase body size limits to allow CSV uploads and larger payloads
+  app.use(express.json({ limit: "5mb" }));
+  app.use(express.urlencoded({ extended: true, limit: "5mb" }));
+  // simple request logger for debugging
+  app.use((req, _res, next) => {
+    try {
+      console.debug && console.debug("req", req.method, req.originalUrl);
+    } catch (e) {}
+    next();
+  });
 
   // Helper to sanitize any route path strings that may contain template placeholders
   function normalizePath(p: any) {
