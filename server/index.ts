@@ -8,6 +8,7 @@ import {
   uploadDataset,
   listDatasets,
 } from "./routes/stocks";
+import { getMetalsHistory } from "./routes/metals";
 
 export function createServer() {
   const app = express();
@@ -82,6 +83,9 @@ export function createServer() {
   // Dataset upload / management
   safeRegister("post", "/api/datasets/upload", uploadDataset);
   safeRegister("get", "/api/datasets", listDatasets);
+
+  // Metals (gold/silver) historical data
+  safeRegister("get", "/api/metals/history", getMetalsHistory);
 
   return app;
 }
