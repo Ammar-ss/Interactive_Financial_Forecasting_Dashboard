@@ -191,17 +191,20 @@ function parseCsv(text: string): HistoricalPoint[] {
 export const uploadDataset: RequestHandler = async (req, res) => {
   try {
     // Expect JSON body: { key: string, csv: string }
+    const contentType = req.headers["content-type"] || "";
+    const bodySize = (req as any).headers && (req as any).headers["content-length"] ? Number((req as any).headers["content-length"]) : undefined;
     const { key, csv } = req.body ?? {};
     if (!key || typeof key !== "string")
-      return res.status(400).json({ error: "Missing dataset key" });
+      return res.status(400).json({ error: "Missing dataset key", received: { contentType, bodySize, bodyType: typeof req.body } });
     if (!csv || typeof csv !== "string")
-      return res.status(400).json({ error: "Missing csv content" });
+      return res.status(400).json({ error: "Missing csv content", received: { contentType, bodySize, bodyType: typeof req.body } });
     const data = parseCsv(csv);
     if (!data.length)
       return res
         .status(400)
         .json({ error: "CSV parsed but no valid rows found" });
     uploadedDatasets.set(key, data);
+    console.debug && console.debug(`uploaded dataset ${key} rows=${data.length}`);
     return res.json({ ok: true, key, rows: data.length });
   } catch (err: any) {
     return res.status(500).json({ error: err?.message ?? "Failed to upload" });
