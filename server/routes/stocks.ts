@@ -145,13 +145,18 @@ function parseCsv(text: string): HistoricalPoint[] {
   if (headerParts.length) headerParts[0] = headerParts[0].replace(/^\uFEFF/, "");
   const header = headerParts.map((h) => h.toLowerCase());
   const rows = lines.slice(1);
-  const dateIdx = header.findIndex((h) => /date|timestamp|day/.test(h));
-  const closeIdx = header.findIndex((h) => /close|adjclose|adj_close/.test(h));
+
+  // allow fallback indices if headers are missing
+  let dateIdx = header.findIndex((h) => /date|timestamp|day/.test(h));
+  let closeIdx = header.findIndex((h) => /close|adjclose|adj_close/.test(h));
   const openIdx = header.findIndex((h) => /open/.test(h));
   const highIdx = header.findIndex((h) => /high/.test(h));
   const lowIdx = header.findIndex((h) => /low/.test(h));
   const volIdx = header.findIndex((h) => /vol|volume/.test(h));
   const symbolIdx = header.findIndex((h) => /symbol|ticker|code/.test(h));
+
+  if (dateIdx === -1) dateIdx = 0; // assume first column
+  if (closeIdx === -1) closeIdx = header.length - 1; // assume last column is close if not named
 
   function safeParseDate(v: any) {
     try {
@@ -166,6 +171,9 @@ function parseCsv(text: string): HistoricalPoint[] {
       // try replace space with T
       const d3 = new Date(s.replace(" ", "T"));
       if (!isNaN(d3.getTime())) return d3.toISOString();
+      // try common DD-MM-YYYY -> YYYY-MM-DD
+      const m = s.match(/^(\d{2})[-\/](\d{2})[-\/](\d{4})$/);
+      if (m) return new Date(`${m[3]}-${m[2]}-${m[1]}T00:00:00Z`).toISOString();
     } catch (e) {}
     // fallback to now
     return new Date().toISOString();
@@ -189,17 +197,17 @@ function parseCsv(text: string): HistoricalPoint[] {
       const volume = Number.isFinite(parseNum(volIdx)) ? parseNum(volIdx) : 0;
       const point: any = {
         date,
-        open: open || 0,
-        high: high || 0,
-        low: low || 0,
-        close: close || 0,
+        open: Number.isFinite(open) ? open : 0,
+        high: Number.isFinite(high) ? high : 0,
+        low: Number.isFinite(low) ? low : 0,
+        close: Number.isFinite(close) ? close : NaN,
         volume,
       };
       if (symbolIdx >= 0 && cols[symbolIdx])
         point.symbol = String(cols[symbolIdx]).toUpperCase();
       return point as HistoricalPoint;
     })
-    .filter((p) => Number.isFinite((p as any).close) && (p as any).close !== 0);
+    .filter((p) => Number.isFinite((p as any).close));
 
   // sort ascending by date
   out.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
