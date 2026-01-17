@@ -438,12 +438,6 @@ export default function Index() {
                   </div>
                 ) : null}
 
-                {uploadedKeys.length ? (
-                  <div className="mt-2 text-sm text-muted-foreground">
-                    Uploaded datasets: {uploadedKeys.join(", ")}
-                  </div>
-                ) : null}
-
                 <div className="h-[380px] w-full">
                   <ResponsiveContainer width="100%" height="100%">
                     <LineChart
