@@ -72,12 +72,19 @@ async function fetchHistorical(
   }
 
   if (dataset === "yahoo") {
+    // Map commodity symbols to Yahoo Finance tickers
+    const yahooSymbolMap: Record<string, string> = {
+      XAU: "XAUINR=X",
+      XAG: "XAGINR=X",
+    };
+    const yahooSymbol = yahooSymbolMap[symbol] || symbol;
+
     const params = new URLSearchParams({
       range,
       interval,
       includeAdjustedClose: "true",
     });
-    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(symbol)}?${params.toString()}`;
+    const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahooSymbol)}?${params.toString()}`;
     const json = await httpsGetJson(url);
     const result = json?.chart?.result?.[0];
     const timestamps: number[] = result?.timestamp || [];
