@@ -79,10 +79,28 @@ async function fetchHistorical(
     };
     const yahooSymbol = yahooSymbolMap[symbol] || symbol;
 
+    // For range/interval format, use period1/period2 timestamps instead
+    const today = new Date();
+    let daysBack = 365;
+    if (range === "1mo") daysBack = 30;
+    else if (range === "3mo") daysBack = 90;
+    else if (range === "6mo") daysBack = 180;
+    else if (range === "2y") daysBack = 730;
+    else if (range === "5y") daysBack = 1825;
+
+    const startDate = new Date(today.getTime() - daysBack * 24 * 60 * 60 * 1000);
+    const period1 = Math.floor(startDate.getTime() / 1000);
+    const period2 = Math.floor(today.getTime() / 1000);
+
+    let intervalStr = "1d";
+    if (interval === "1wk") intervalStr = "1wk";
+    else if (interval === "1mo") intervalStr = "1mo";
+
     const params = new URLSearchParams({
-      range,
-      interval,
-      includeAdjustedClose: "true",
+      period1: String(period1),
+      period2: String(period2),
+      interval: intervalStr,
+      includePrePost: "false",
     });
     const url = `https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(yahooSymbol)}?${params.toString()}`;
     const json = await httpsGetJson(url);
