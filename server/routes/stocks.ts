@@ -81,9 +81,10 @@ async function fetchHistorical(
 
   if (dataset === "yahoo") {
     // Map commodity symbols to Yahoo Finance tickers
+    // Using gold/silver futures (GC=F, SI=F) which are more reliably available
     const yahooSymbolMap: Record<string, string> = {
-      XAU: "XAUINR=X",
-      XAG: "XAGINR=X",
+      XAU: "GC=F",  // Gold Futures
+      XAG: "SI=F",  // Silver Futures
     };
     const yahooSymbol = yahooSymbolMap[symbol] || symbol;
 
