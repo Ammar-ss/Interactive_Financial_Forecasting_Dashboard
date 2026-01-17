@@ -70,13 +70,11 @@ export default function Index() {
   const [errorDetail, setErrorDetail] = useState<any>(null);
 
   useEffect(() => {
-    // reflect context company into local symbol
-    setSymbol(company);
     // initial load
     runAll();
 
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [company]);
+  }, []);
 
   const runAll = async () => {
     setLoading(true);
