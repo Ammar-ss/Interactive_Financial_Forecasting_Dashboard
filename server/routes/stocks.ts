@@ -19,23 +19,31 @@ function httpsGetJson(url: string): Promise<any> {
   return new Promise((resolve, reject) => {
     const req = https.get(
       url,
-      { headers: { "User-Agent": "fusion-starter" } },
+      { headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" } },
       (res) => {
         let data = "";
         res.on("data", (chunk) => (data += chunk));
         res.on("end", () => {
           try {
+            if (res.statusCode && res.statusCode >= 400) {
+              return reject(new Error(`HTTP ${res.statusCode}: ${data.slice(0, 200)}`));
+            }
             const json = JSON.parse(data);
-            if (res.statusCode && res.statusCode >= 400)
-              return reject(new Error(`HTTP ${res.statusCode}`));
             resolve(json);
           } catch (err) {
-            reject(err);
+            reject(new Error(`Failed to parse response: ${err instanceof Error ? err.message : String(err)}`));
           }
         });
       },
     );
-    req.on("error", reject);
+    req.on("error", (err) => {
+      reject(new Error(`Network error: ${err instanceof Error ? err.message : String(err)}`));
+    });
+    req.on("timeout", () => {
+      req.destroy();
+      reject(new Error("Request timeout"));
+    });
+    req.setTimeout(10000);
     req.end();
   });
 }
