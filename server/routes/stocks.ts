@@ -19,25 +19,40 @@ function httpsGetJson(url: string): Promise<any> {
   return new Promise((resolve, reject) => {
     const req = https.get(
       url,
-      { headers: { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36" } },
+      {
+        headers: {
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36",
+        },
+      },
       (res) => {
         let data = "";
         res.on("data", (chunk) => (data += chunk));
         res.on("end", () => {
           try {
             if (res.statusCode && res.statusCode >= 400) {
-              return reject(new Error(`HTTP ${res.statusCode}: ${data.slice(0, 200)}`));
+              return reject(
+                new Error(`HTTP ${res.statusCode}: ${data.slice(0, 200)}`),
+              );
             }
             const json = JSON.parse(data);
             resolve(json);
           } catch (err) {
-            reject(new Error(`Failed to parse response: ${err instanceof Error ? err.message : String(err)}`));
+            reject(
+              new Error(
+                `Failed to parse response: ${err instanceof Error ? err.message : String(err)}`,
+              ),
+            );
           }
         });
       },
     );
     req.on("error", (err) => {
-      reject(new Error(`Network error: ${err instanceof Error ? err.message : String(err)}`));
+      reject(
+        new Error(
+          `Network error: ${err instanceof Error ? err.message : String(err)}`,
+        ),
+      );
     });
     req.on("timeout", () => {
       req.destroy();
@@ -83,8 +98,8 @@ async function fetchHistorical(
     // Map commodity symbols to Yahoo Finance tickers
     // Using gold/silver futures (GC=F, SI=F) which are more reliably available
     const yahooSymbolMap: Record<string, string> = {
-      XAU: "GC=F",  // Gold Futures
-      XAG: "SI=F",  // Silver Futures
+      XAU: "GC=F", // Gold Futures
+      XAG: "SI=F", // Silver Futures
     };
     const yahooSymbol = yahooSymbolMap[symbol] || symbol;
 
@@ -97,7 +112,9 @@ async function fetchHistorical(
     else if (range === "2y") daysBack = 730;
     else if (range === "5y") daysBack = 1825;
 
-    const startDate = new Date(today.getTime() - daysBack * 24 * 60 * 60 * 1000);
+    const startDate = new Date(
+      today.getTime() - daysBack * 24 * 60 * 60 * 1000,
+    );
     const period1 = Math.floor(startDate.getTime() / 1000);
     const period2 = Math.floor(today.getTime() / 1000);
 
@@ -176,7 +193,8 @@ function parseCsv(text: string): HistoricalPoint[] {
   if (!lines.length) return [];
   const headerParts = lines[0].split(/,|;|\t/).map((h) => h.trim());
   // strip BOM if present on first header
-  if (headerParts.length) headerParts[0] = headerParts[0].replace(/^\uFEFF/, "");
+  if (headerParts.length)
+    headerParts[0] = headerParts[0].replace(/^\uFEFF/, "");
   const header = headerParts.map((h) => h.toLowerCase());
   const rows = lines.slice(1);
 
@@ -255,7 +273,10 @@ export const uploadDataset: RequestHandler = async (req, res) => {
     // - raw text body (CSV)
     // - form-style where csv is provided in req.body.csv
     const contentType = (req.headers["content-type"] || "").toLowerCase();
-    const bodySize = (req as any).headers && (req as any).headers["content-length"] ? Number((req as any).headers["content-length"]) : undefined;
+    const bodySize =
+      (req as any).headers && (req as any).headers["content-length"]
+        ? Number((req as any).headers["content-length"])
+        : undefined;
 
     let key: string | undefined;
     let csv: string | undefined;
@@ -263,25 +284,44 @@ export const uploadDataset: RequestHandler = async (req, res) => {
     if (typeof req.body === "string") {
       // raw text body (likely text/csv)
       csv = req.body as string;
-      key = String(req.query?.key || req.headers["x-dataset-key"] || "uploaded_csv");
+      key = String(
+        req.query?.key || req.headers["x-dataset-key"] || "uploaded_csv",
+      );
     } else if (req.body && typeof req.body === "object") {
       key = req.body.key || req.query?.key || req.headers["x-dataset-key"];
       csv = req.body.csv || req.body.CSV || req.body.content;
     }
 
     if (!key || typeof key !== "string")
-      return res.status(400).json({ error: "Missing dataset key", received: { contentType, bodySize, bodyType: typeof req.body } });
+      return res
+        .status(400)
+        .json({
+          error: "Missing dataset key",
+          received: { contentType, bodySize, bodyType: typeof req.body },
+        });
     if (!csv || typeof csv !== "string")
-      return res.status(400).json({ error: "Missing csv content", received: { contentType, bodySize, bodyType: typeof req.body } });
+      return res
+        .status(400)
+        .json({
+          error: "Missing csv content",
+          received: { contentType, bodySize, bodyType: typeof req.body },
+        });
 
     const data = parseCsv(csv);
     if (!data.length) {
       // include diagnostic info
       const sampleLines = (csv || "").split(/\r?\n/).slice(0, 10);
-      return res.status(400).json({ error: "CSV parsed but no valid rows found", rowsParsed: 0, sampleLines });
+      return res
+        .status(400)
+        .json({
+          error: "CSV parsed but no valid rows found",
+          rowsParsed: 0,
+          sampleLines,
+        });
     }
     uploadedDatasets.set(key, data);
-    console.debug && console.debug(`uploaded dataset ${key} rows=${data.length}`);
+    console.debug &&
+      console.debug(`uploaded dataset ${key} rows=${data.length}`);
     return res.json({ ok: true, key, rows: data.length });
   } catch (err: any) {
     return res.status(500).json({ error: err?.message ?? "Failed to upload" });
@@ -318,7 +358,10 @@ export const getHistorical: RequestHandler = async (req, res) => {
 
     res.json({ symbol, range, interval, dataset, data });
   } catch (err: any) {
-    console.error(`Error fetching historical data for ${req.query.symbol}:`, err?.message);
+    console.error(
+      `Error fetching historical data for ${req.query.symbol}:`,
+      err?.message,
+    );
     res.status(500).json({ error: err?.message ?? "Failed to fetch data" });
   }
 };
