@@ -318,6 +318,7 @@ export const getHistorical: RequestHandler = async (req, res) => {
 
     res.json({ symbol, range, interval, dataset, data });
   } catch (err: any) {
+    console.error(`Error fetching historical data for ${req.query.symbol}:`, err?.message);
     res.status(500).json({ error: err?.message ?? "Failed to fetch data" });
   }
 };
