@@ -53,10 +53,6 @@ export default function Index() {
   const [symbol, setSymbol] = useState(company ?? "AAPL");
   const [range, setRange] = useState<(typeof ranges)[number]>("1y");
   const [interval, setInterval] = useState<(typeof intervals)[number]>("1d");
-  const [uploadedKeys, setUploadedKeys] = useState<string[]>([]);
-  const [uploading, setUploading] = useState(false);
-  const [uploadFileName, setUploadFileName] = useState("");
-  const [uploadKey, setUploadKey] = useState(dataset as string);
   const [useMA, setUseMA] = useState(true);
   const [useEMA, setUseEMA] = useState(true);
   const [useLR, setUseLR] = useState(true);
